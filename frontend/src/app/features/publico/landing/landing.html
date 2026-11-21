@@ -1,0 +1,132 @@
+<section class="hero">
+  <div class="envoltorio">
+    <span class="chip chip-terracota">Red nacional de ollas comunes</span>
+    <h1 class="hero-titulo">Cada olla común, una red de apoyo para su comunidad</h1>
+    <p class="hero-sub">
+      AYNI conecta a dirigentas, donantes y voluntarias: indicadores en vivo, inventario PEPS con
+      trazabilidad y reportes claros para cada comunidad.
+    </p>
+
+    <div class="buscador">
+      <div class="campo">
+        <label class="etiqueta" for="dep">Departamento</label>
+        <select id="dep" class="selector" [(ngModel)]="departamentoSel" (ngModelChange)="alCambiarDepartamento()">
+          <option value="">Todos</option>
+          @for (dep of departamentos; track dep) {
+            <option [value]="dep">{{ dep }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label class="etiqueta" for="prov">Provincia</label>
+        <select id="prov" class="selector" [(ngModel)]="provinciaSel" (ngModelChange)="alCambiarProvincia()">
+          <option value="">Todas</option>
+          @for (prov of provincias; track prov) {
+            <option [value]="prov">{{ prov }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label class="etiqueta" for="dist">Distrito</label>
+        <select id="dist" class="selector" [(ngModel)]="distritoSel">
+          <option value="">Todos</option>
+          @for (dist of distritos; track dist) {
+            <option [value]="dist">{{ dist }}</option>
+          }
+        </select>
+      </div>
+      <button type="button" class="btn" (click)="buscar()">Buscar ollas</button>
+    </div>
+
+    <div class="fila envolver mt-3">
+      <a routerLink="/registrar-olla" class="btn btn-secundario">Registrar mi olla común</a>
+      <a routerLink="/login" class="btn btn-fantasma">Soy dirigenta, iniciar sesión</a>
+    </div>
+  </div>
+</section>
+
+<section class="envoltorio mt-4">
+  <div class="seccion-titulo">
+    <div>
+      <h2>Indicadores de impacto en vivo</h2>
+      <p class="tenue mb-0">Datos reales de la plataforma (HU-01)</p>
+    </div>
+    <a routerLink="/ollas" class="btn btn-suave btn-mini">Ver directorio completo</a>
+  </div>
+
+  @if (cargando()) {
+    <div class="cargando">
+      <div class="rueda" aria-hidden="true"></div>
+      <span>Cargando indicadores…</span>
+    </div>
+  } @else if (error()) {
+    <div class="alerta alerta-error">{{ error() }}</div>
+  } @else if (kpis(); as datos) {
+    <div class="rejilla-kpi">
+      <div class="kpi kpi-terracota">
+        <span class="kpi-valor">{{ fEntero(datos.ollas_activas) }}</span>
+        <span class="kpi-etiqueta">Ollas activas</span>
+      </div>
+      <div class="kpi kpi-salvia">
+        <span class="kpi-valor">{{ fEntero(datos.ollas_atienden_hoy) }}</span>
+        <span class="kpi-etiqueta">Atienden hoy</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-valor">{{ fEntero(datos.beneficiarios_hoy) }}</span>
+        <span class="kpi-etiqueta">Beneficiarios de hoy</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-valor">{{ fEntero(datos.beneficiarios_totales) }}</span>
+        <span class="kpi-etiqueta">Beneficiarios totales</span>
+      </div>
+      <div class="kpi kpi-salvia">
+        <span class="kpi-valor">{{ fEntero(datos.distritos_cubiertos) }}</span>
+        <span class="kpi-etiqueta">Distritos cubiertos</span>
+      </div>
+      <div class="kpi kpi-terracota">
+        <span class="kpi-valor">{{ fEntero(datos.total_donaciones) }}</span>
+        <span class="kpi-etiqueta">Donaciones registradas</span>
+      </div>
+      <div class="kpi kpi-terracota">
+        <span class="kpi-valor">{{ fSoles(datos.monto_donado_soles) }}</span>
+        <span class="kpi-etiqueta">Monto donado</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-valor">{{ fEntero(datos.total_movimientos) }}</span>
+        <span class="kpi-etiqueta">Movimientos de inventario</span>
+      </div>
+    </div>
+  }
+</section>
+
+<section class="envoltorio mt-4">
+  <div class="rejilla">
+    <article class="tarjeta">
+      <span class="chip chip-terracota">HU-02 · HU-03</span>
+      <h3 class="mt-2">Encuentra tu olla</h3>
+      <p class="tenue">
+        Busca por departamento, provincia o distrito y consulta la atención del día, las necesidades
+        urgentes y la ficha completa de cada olla común.
+      </p>
+      <a routerLink="/ollas" class="btn btn-suave btn-mini">Explorar ollas</a>
+    </article>
+    <article class="tarjeta">
+      <span class="chip chip-ambar">HU-04</span>
+      <h3 class="mt-2">Registra tu olla</h3>
+      <p class="tenue">
+        Da de alta tu olla común en minutos: con o sin cuenta de dirigenta. Al registrarte recibes un
+        código único de la comunidad.
+      </p>
+      <a routerLink="/registrar-olla" class="btn btn-suave btn-mini">Registrar ahora</a>
+    </article>
+    <article class="tarjeta">
+      <span class="chip chip-verde">HU-08 a HU-14</span>
+      <h3 class="mt-2">Gestiona con confianza</h3>
+      <p class="tenue">
+        Inventario PEPS, donantes y donaciones, recetario con despacho atómico, kardex y reportes en
+        CSV desde el panel de la dirigenta.
+      </p>
+      <a routerLink="/login" class="btn btn-suave btn-mini">Entrar al panel</a>
+    </article>
+  </div>
+</section>

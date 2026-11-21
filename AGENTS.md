@@ -2,7 +2,8 @@
 
 ## Repo layout
 
-- Two top-level dirs: `backend/` (FastAPI + SQL Server API) and `database/AyniOllasDB.SQL` (complete schema, stored procedures, seed data). Nothing else — no frontend here (CORS only allows `http://localhost:4200`, a separate Angular app), no tests, no CI, no lint/typecheck config.
+- Three top-level dirs: `backend/` (FastAPI + SQL Server API), `database/AyniOllasDB.SQL` (complete schema, stored procedures, seed data) and `frontend/` (**Angular 22** standalone components + signals + CSS global; `ng serve` runs on port **4200** because backend CORS only allows `http://localhost:4200` — no proxy needed). No tests, no CI, no lint config.
+- The frontend mirrors the 8 routers with typed services in `src/app/core/services/*` and DTOs in `src/app/core/models.ts` (field names must match `backend/app/schemas.py` and `backend/app/routers/*`). Its typecheck/build is `npm run build` (`ng build`). Login (`AuthService.login`) first sends **form-urlencoded** `username`/`password` as specified, then auto-retries as **JSON** on 422 because the current backend validates `LoginRequest` as a JSON body (form data → 422). Layout: `core/` (auth/interceptor/guards/toasts) + `features/` (publico, auth, panel, admin).
 - User-facing text (error messages, `mensaje` strings, comments, docs) is **Spanish**. Keep new strings in Spanish.
 - Read `backend/README.md` before adding endpoints: it maps endpoints to user stories HU-01..HU-14 and lists seed users/passwords.
 
@@ -11,6 +12,14 @@
 ```powershell
 uv sync                                                   # install deps (uv; Python 3.12 pinned in .python-version)
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8000  # start API — README says run WITHOUT --reload
+```
+
+## Commands (run from `frontend/`)
+
+```powershell
+npm install     # first time only
+npm start       # ng serve → http://localhost:4200 (port fixed: backend CORS allowlist)
+npm run build   # typecheck + production build (ng build)
 ```
 
 - Prereqs: SQL Server up (Docker, port 1433), `ODBC Driver 18 for SQL Server` (17 also auto-detected), `backend/.env` copied from `.env.example` (`DB_*`, `API_NINJAS_KEY`).
