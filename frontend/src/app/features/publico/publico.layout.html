@@ -1,0 +1,41 @@
+<header class="cabecera">
+  <div class="envoltorio cabecera-fila">
+    <a routerLink="/" class="marca">
+      <span class="marca-punto">A</span> AYNI <small>Ollas comunes</small>
+    </a>
+    <nav class="enlaces">
+      <a routerLink="/ollas">Ollas comunes</a>
+      <a routerLink="/registrar-olla">Registrar olla</a>
+      @if (auth.autenticado()) {
+        <a
+          class="btn btn-mini"
+          [routerLink]="auth.esAdmin() ? '/admin/ollas' : '/panel/mi-olla'"
+          >Ir al panel</a
+        >
+      } @else {
+        <a routerLink="/login">Iniciar sesión</a>
+        <a routerLink="/registro" class="btn btn-mini">Crear cuenta</a>
+      }
+    </nav>
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>
+
+<footer class="pie">
+  <div class="envoltorio separar envolver">
+    <div>
+      <span class="marca"><span class="marca-punto">A</span> AYNI</span>
+      <div class="mt-1">Plataforma comunitaria de ollas comunes · HU-01 a HU-14</div>
+    </div>
+    <div class="envolver">
+      <a routerLink="/ollas">Directorio de ollas</a>
+      &nbsp;·&nbsp;
+      <a routerLink="/registrar-olla">Registrar mi olla</a>
+      &nbsp;·&nbsp;
+      <a routerLink="/login">Acceso de dirigentas</a>
+    </div>
+  </div>
+</footer>
