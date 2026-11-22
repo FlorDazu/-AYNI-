@@ -5,8 +5,14 @@
 <div class="panel">
   <aside class="barra-lateral" [class.abierta]="menuAbierto()">
     <a routerLink="/" class="marca" (click)="cerrarMenu()">
-      <span class="marca-punto">A</span>
-      AYNI <small>{{ auth.esAdmin() ? 'Admin' : 'Panel' }}</small>
+      <img
+        class="marca-logo"
+        src="images/LogoAYNI.png"
+        alt="Logotipo de AYNI, sistema comunitario de ollas comunes"
+        width="1024"
+        height="572"
+      />
+      <small>{{ auth.esAdmin() ? 'Admin' : 'Panel' }}</small>
     </a>
 
     <div class="usuario-tarjeta">

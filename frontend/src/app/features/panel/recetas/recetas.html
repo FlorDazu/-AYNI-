@@ -1,7 +1,7 @@
 <div class="seccion-titulo">
   <div>
     <h1>Recetas y despacho</h1>
-    <p class="tenue mb-0">HU-12 · Cálculo proporcional, despacho atómico y recetario externo</p>
+    <p class="tenue mb-0">Cálculo proporcional, despacho atómico y recetario externo</p>
   </div>
   <div class="fila envolver medio">
     <div class="campo" style="min-width: 150px">
@@ -136,7 +136,7 @@
         <div class="vacio"><p>No se encontraron sugerencias.</p></div>
       } @else {
         <div class="rejilla-lista">
-          @for (externa of recetasExternas; track externa.title) {
+          @for (externa of recetasExternas; track $index) {
             <article class="ficha-olla">
               <h3 class="mb-1">{{ externa.title }}</h3>
               @if (externa.servings) {

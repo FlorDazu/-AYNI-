@@ -5,7 +5,6 @@ import { ErrorApi, mensajeDeError } from '../../../core/error-api';
 import type { Movimiento, ResumenReporte } from '../../../core/models';
 import { ReportesService, type TipoCsv } from '../../../core/services/reportes.service';
 import { ToastService } from '../../../core/toast.service';
-import { environment } from '../../../../environments/environment';
 
 type Pestana = 'kardex' | 'resumen' | 'csv';
 
@@ -130,7 +129,4 @@ export class Reportes implements OnInit {
   claseTipo(tipo: Movimiento['tipo_movimiento']): string {
     return tipo === 'ENTRADA' ? 'chip-verde' : tipo === 'SALIDA' ? 'chip-ambar' : 'chip-rojo';
   }
-
-  /** Ruta absoluta de la API (referencia informativa en la pestaña CSV). */
-  readonly urlApi = environment.apiUrl;
 }
