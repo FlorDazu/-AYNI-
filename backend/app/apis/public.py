@@ -3,7 +3,7 @@
 import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.database import consultar, consultar_uno, ejecutar_sp, get_db
+from app.core.database import consultar, consultar_uno, ejecutar_sp, get_db
 from app.schemas import OllaRegistro
 
 router = APIRouter(prefix="/api/public", tags=["Portal público"])

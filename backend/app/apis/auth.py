@@ -5,9 +5,9 @@ from typing import Any
 import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.database import consultar_uno, ejecutar, ejecutar_sp, get_db
+from app.core.database import consultar_uno, ejecutar, ejecutar_sp, get_db
 from app.schemas import LoginRequest, RegistroOllaCuenta
-from app.security import (
+from app.core.security import (
     MAX_INTENTOS_FALLIDOS,
     MINUTOS_BLOQUEO,
     SQL_USUARIO_ACTUAL,

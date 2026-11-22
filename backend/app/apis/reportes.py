@@ -9,9 +9,9 @@ import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 
-from app.database import consultar, consultar_uno, get_db
-from app.routers.inventario import SQL_STOCK
-from app.security import get_id_olla_contexto
+from app.core.database import consultar, consultar_uno, get_db
+from app.apis.inventario import SQL_STOCK
+from app.core.security import get_id_olla_contexto
 
 router = APIRouter(prefix="/api", tags=["Kardex y reportes"])
 

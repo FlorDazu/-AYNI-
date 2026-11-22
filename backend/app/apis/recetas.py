@@ -10,9 +10,9 @@ import httpx
 import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.database import consultar, ejecutar_sp, get_db
+from app.core.database import consultar, ejecutar_sp, get_db
 from app.schemas import DespacharReceta
-from app.security import get_id_olla_contexto, get_usuario_actual
+from app.core.security import get_id_olla_contexto, get_usuario_actual
 
 logger = logging.getLogger("ayni.recetas")
 router = APIRouter(prefix="/api/recetas", tags=["Recetas"])

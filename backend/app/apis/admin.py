@@ -3,9 +3,9 @@
 import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.database import consultar, consultar_uno, ejecutar, get_db
+from app.core.database import consultar, consultar_uno, ejecutar, get_db
 from app.schemas import OllaEstadoAdmin, UsuarioAdminUpdate
-from app.security import requiere_admin
+from app.core.security import requiere_admin
 
 router = APIRouter(prefix="/api/admin", tags=["Administración"], dependencies=[Depends(requiere_admin)])
 

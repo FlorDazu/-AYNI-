@@ -3,10 +3,10 @@
 import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.database import consultar_uno, ejecutar, get_db
-from app.routers.auth import SQL_OLLA_RESUMEN
+from app.core.database import consultar_uno, ejecutar, get_db
+from app.apis.auth import SQL_OLLA_RESUMEN
 from app.schemas import EstadoDiario
-from app.security import get_id_olla_contexto
+from app.core.security import get_id_olla_contexto
 
 router = APIRouter(prefix="/api/olla", tags=["Panel dirigenta"])
 

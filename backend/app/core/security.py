@@ -10,7 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import ExpiredSignatureError, JWTError, jwt
 from passlib.context import CryptContext
 
-from app.database import consultar_uno, get_db
+from app.core.database import consultar_uno, get_db
 
 JWT_SECRET = os.getenv("JWT_SECRET", "ayni_super_secret_jwt_key_2026_cambiar")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
