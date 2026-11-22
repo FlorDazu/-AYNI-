@@ -15,9 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.database import consultar, consultar_uno, ejecutar, obtener_conexion, traducir_error_sql
-from app.routers import admin, auth, donaciones, inventario, olla, public, recetas, reportes
-from app.security import hash_password
+from app.core.database import consultar, consultar_uno, ejecutar, obtener_conexion, traducir_error_sql
+from app.apis import admin, auth, donaciones, inventario, olla, public, recetas, reportes
+from app.core.security import hash_password
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
 logger = logging.getLogger("ayni")

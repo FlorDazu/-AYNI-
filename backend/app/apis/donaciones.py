@@ -3,9 +3,9 @@
 import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.database import consultar, consultar_uno, ejecutar_en_cursor, ejecutar_sp, get_db, transaccion
+from app.core.database import consultar, consultar_uno, ejecutar_en_cursor, ejecutar_sp, get_db, transaccion
 from app.schemas import DonacionCrear, DonanteCrear
-from app.security import get_id_olla_contexto, get_usuario_actual
+from app.core.security import get_id_olla_contexto, get_usuario_actual
 
 router = APIRouter(prefix="/api", tags=["Donantes y donaciones"])
 

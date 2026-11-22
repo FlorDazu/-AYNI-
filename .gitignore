@@ -1,0 +1,28 @@
+# ==========================================================================
+# AYNI · .gitignore de la raíz (aplica recursivamente a todo el repo)
+# ==========================================================================
+
+# ---------- Python / backend ----------
+.venv/
+**/.venv/
+venv/
+**/venv/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+**/.pytest_cache/
+*.pyc
+
+# ---------- Node / frontend ----------
+node_modules/
+**/node_modules/
+.angular/
+**/.angular/
+dist/
+**/dist/
+
+# ---------- Secretos (el ejemplo sí se versiona) ----------
+.env
+**/.env
+!.env.example
+!**/.env.example

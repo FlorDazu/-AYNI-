@@ -5,9 +5,9 @@ from typing import Literal
 import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.database import consultar, consultar_uno, ejecutar_sp, get_db
+from app.core.database import consultar, consultar_uno, ejecutar_sp, get_db
 from app.schemas import DescarteLote, EntradaInventario, SalidaInventario
-from app.security import get_id_olla_contexto, get_usuario_actual
+from app.core.security import get_id_olla_contexto, get_usuario_actual
 
 router = APIRouter(prefix="/api", tags=["Inventario PEPS"])
 
