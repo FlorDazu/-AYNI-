@@ -1,34 +1,65 @@
 import { Routes } from '@angular/router';
 import { authGuard, roleGuard } from './core/auth.guard';
 import { PublicoLayout } from './features/publico/publico.layout';
-import { Landing } from './features/publico/landing/landing';
-import { DirectorioOllas } from './features/publico/ollas/ollas';
-import { OllaDetalle } from './features/publico/olla-detalle/olla-detalle';
-import { RegistroPublico } from './features/publico/registro-publico/registro-publico';
-import { Login } from './features/auth/login/login';
-import { Registro } from './features/auth/registro/registro';
 import { PanelLayout } from './features/panel/panel.layout';
-import { MiOlla } from './features/panel/mi-olla/mi-olla';
-import { Inventario } from './features/panel/inventario/inventario';
-import { Donaciones } from './features/panel/donaciones/donaciones';
-import { Recetas } from './features/panel/recetas/recetas';
-import { Reportes } from './features/panel/reportes/reportes';
-import { OllasAdmin } from './features/admin/ollas-admin/ollas-admin';
-import { UsuariosAdmin } from './features/admin/usuarios-admin/usuarios-admin';
-import { Auditoria } from './features/admin/auditoria/auditoria';
 
+/**
+ * Rutas de la aplicación.
+ *
+ * Las vistas se cargan de forma diferida (`loadComponent`) para que el
+ * bundle inicial solo traiga el armazón público/privado y cada pantalla
+ * baje su propio chunk al navegar hacia ella.
+ */
 export const routes: Routes = [
   // ---------------------------------------------------------------- portal público
   {
     path: '',
     component: PublicoLayout,
     children: [
-      { path: '', component: Landing, title: 'AYNI · Ollas comunes' },
-      { path: 'ollas', component: DirectorioOllas, title: 'Ollas comunes · AYNI' },
-      { path: 'ollas/:id', component: OllaDetalle, title: 'Ficha de olla · AYNI' },
-      { path: 'registrar-olla', component: RegistroPublico, title: 'Registrar olla · AYNI' },
-      { path: 'login', component: Login, title: 'Iniciar sesión · AYNI' },
-      { path: 'registro', component: Registro, title: 'Crear cuenta de dirigenta · AYNI' },
+      {
+        path: '',
+        loadComponent: () => import('./features/publico/landing/landing').then((m) => m.Landing),
+        title: 'AYNI · Ollas comunes',
+      },
+      {
+        path: 'nosotros',
+        loadComponent: () => import('./features/publico/nosotros/nosotros').then((m) => m.Nosotros),
+        title: 'Nosotros · AYNI',
+      },
+      {
+        path: 'ollas',
+        loadComponent: () =>
+          import('./features/publico/ollas/ollas').then((m) => m.DirectorioOllas),
+        title: 'Ollas comunes · AYNI',
+      },
+      {
+        path: 'ollas/:id',
+        loadComponent: () =>
+          import('./features/publico/olla-detalle/olla-detalle').then((m) => m.OllaDetalle),
+        title: 'Ficha de olla · AYNI',
+      },
+      {
+        path: 'registrar-olla',
+        loadComponent: () =>
+          import('./features/publico/registro-publico/registro-publico').then((m) => m.RegistroPublico),
+        title: 'Registrar olla · AYNI',
+      },
+      {
+        path: 'contactanos',
+        loadComponent: () =>
+          import('./features/publico/contactanos/contactanos').then((m) => m.Contactanos),
+        title: 'Contáctanos · AYNI',
+      },
+      {
+        path: 'login',
+        loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
+        title: 'Iniciar sesión · AYNI',
+      },
+      {
+        path: 'registro',
+        loadComponent: () => import('./features/auth/registro/registro').then((m) => m.Registro),
+        title: 'Crear cuenta de dirigenta · AYNI',
+      },
     ],
   },
 
@@ -40,11 +71,32 @@ export const routes: Routes = [
     data: { roles: ['DIRIGENTA'] },
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'mi-olla' },
-      { path: 'mi-olla', component: MiOlla, title: 'Mi olla · AYNI' },
-      { path: 'inventario', component: Inventario, title: 'Inventario PEPS · AYNI' },
-      { path: 'donaciones', component: Donaciones, title: 'Donantes y donaciones · AYNI' },
-      { path: 'recetas', component: Recetas, title: 'Recetas y despacho · AYNI' },
-      { path: 'reportes', component: Reportes, title: 'Kardex y reportes · AYNI' },
+      {
+        path: 'mi-olla',
+        loadComponent: () => import('./features/panel/mi-olla/mi-olla').then((m) => m.MiOlla),
+        title: 'Mi olla · AYNI',
+      },
+      {
+        path: 'inventario',
+        loadComponent: () => import('./features/panel/inventario/inventario').then((m) => m.Inventario),
+        title: 'Inventario PEPS · AYNI',
+      },
+      {
+        path: 'donaciones',
+        loadComponent: () =>
+          import('./features/panel/donaciones/donaciones').then((m) => m.Donaciones),
+        title: 'Donantes y donaciones · AYNI',
+      },
+      {
+        path: 'recetas',
+        loadComponent: () => import('./features/panel/recetas/recetas').then((m) => m.Recetas),
+        title: 'Recetas y despacho · AYNI',
+      },
+      {
+        path: 'reportes',
+        loadComponent: () => import('./features/panel/reportes/reportes').then((m) => m.Reportes),
+        title: 'Kardex y reportes · AYNI',
+      },
     ],
   },
 
@@ -56,9 +108,24 @@ export const routes: Routes = [
     data: { roles: ['ADMIN'] },
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'ollas' },
-      { path: 'ollas', component: OllasAdmin, title: 'Gestión de ollas · AYNI' },
-      { path: 'usuarios', component: UsuariosAdmin, title: 'Gestión de usuarios · AYNI' },
-      { path: 'auditoria', component: Auditoria, title: 'Auditoría por olla · AYNI' },
+      {
+        path: 'ollas',
+        loadComponent: () =>
+          import('./features/admin/ollas-admin/ollas-admin').then((m) => m.OllasAdmin),
+        title: 'Gestión de ollas · AYNI',
+      },
+      {
+        path: 'usuarios',
+        loadComponent: () =>
+          import('./features/admin/usuarios-admin/usuarios-admin').then((m) => m.UsuariosAdmin),
+        title: 'Gestión de usuarios · AYNI',
+      },
+      {
+        path: 'auditoria',
+        loadComponent: () =>
+          import('./features/admin/auditoria/auditoria').then((m) => m.Auditoria),
+        title: 'Auditoría por olla · AYNI',
+      },
     ],
   },
 

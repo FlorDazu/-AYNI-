@@ -1,7 +1,7 @@
 <div class="seccion-titulo">
   <div>
     <h1>Auditoría por olla</h1>
-    <p class="tenue mb-0">HU-14 · Resumen, stock y kardex de una olla concreta vía <code>?id_olla=</code></p>
+    <p class="tenue mb-0">Resumen, stock y kardex de una olla concreta</p>
   </div>
   @if (idOlla(); as id) {
     <div class="fila envolver">
@@ -20,9 +20,9 @@
   <div class="tarjeta" style="max-width: 640px">
     <div class="tarjeta-titulo">Seleccione la olla a auditar</div>
     <p class="tenue chico">
-      El parámetro <code>id_olla</code> es obligatorio para el rol ADMIN: sin él, los endpoints de
-      datos por olla responden con un error. La elección queda registrada en la URL para poder
-      compartirla.
+      Como administración global, primero elija la olla que desea revisar: la elección queda
+      guardada en la dirección de la página para que pueda compartirla con otra persona del
+      equipo.
     </p>
 
     <div class="campo mb-3">
@@ -193,7 +193,7 @@
           </tbody>
         </table>
       </div>
-      <p class="tenue chico mt-2 mb-0">{{ movimientos() }} movimiento(s) (máx. 200, más recientes primero)</p>
+      <p class="tenue chico mt-2 mb-0">{{ movimientos().length }} movimiento(s) (máx. 200, más recientes primero)</p>
     }
   }
 }

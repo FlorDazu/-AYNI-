@@ -1,7 +1,7 @@
 <div class="seccion-titulo">
   <div>
     <h1>Kardex y reportes</h1>
-    <p class="tenue mb-0">HU-14 · Historial de movimientos, resumen analítico y exportación CSV</p>
+    <p class="tenue mb-0">Historial de movimientos, resumen analítico y exportación CSV</p>
   </div>
 </div>
 
@@ -96,7 +96,7 @@
         </tbody>
       </table>
     </div>
-    <p class="tenue chico mt-2 mb-0">{{ movimientos() }} movimiento(s) · los más recientes primero</p>
+    <p class="tenue chico mt-2 mb-0">{{ movimientos().length }} movimiento(s) · los más recientes primero</p>
   }
 }
 
@@ -228,8 +228,8 @@
   <div class="tarjeta" style="max-width: 720px">
     <div class="tarjeta-titulo">Descargar reportes en CSV</div>
     <p class="tenue chico">
-      El archivo usa <code>;</code> como separador y BOM UTF-8 para que Excel reconozca tildes y ñ.
-      Endpoint: <code>GET {{ urlApi }}/reportes/exportar-csv</code>
+      El archivo usa punto y coma como separador y codificación UTF-8 con BOM, de modo que Excel
+      reconoce tildes y ñ sin problemas. Se descarga con su sesión activa.
     </p>
 
     <form (ngSubmit)="descargarCsv()" #csvForm="ngForm">
@@ -258,8 +258,8 @@
     </form>
 
     <div class="alerta alerta-info mt-3">
-      El nombre del archivo se toma de la cabecera <code>Content-Disposition</code>
-      (p. ej. <code>ayni_movimientos_olla1_20261120.csv</code>).
+      El nombre del archivo se sugiere automáticamente según el reporte elegido y la fecha, por
+      ejemplo <strong>ayni_movimientos_20261120.csv</strong>.
     </div>
   </div>
 }

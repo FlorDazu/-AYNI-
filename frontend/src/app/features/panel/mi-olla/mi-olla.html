@@ -10,7 +10,7 @@
     <div>
       <span class="ficha-codigo">{{ olla.codigo_unico }}</span>
       <h1 class="mt-1">{{ olla.nombre }}</h1>
-      <p class="tenue mb-0">HU-08 · Perfil de su olla y estado del día</p>
+      <p class="tenue mb-0">Perfil de su olla y estado del día</p>
     </div>
     <div class="fila envolver">
       <span [class]="'chip ' + (olla.activada ? 'chip-verde' : 'chip-rojo')">
@@ -55,7 +55,7 @@
     <article class="tarjeta">
       <div class="tarjeta-titulo">Estado diario</div>
       <p class="tenue chico">
-        Los cambios se reflejan de inmediato en el portal público (HU-08).
+        Los cambios se reflejan de inmediato en el portal público.
       </p>
 
       @if (error()) {
