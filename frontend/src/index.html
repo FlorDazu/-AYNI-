@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>AYNI · Ollas Comunes</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Plataforma AYNI para la gestión de ollas comunes: directorio público, inventario PEPS, donaciones, recetas y reportes.">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    /* Aplica el tamaño de letra guardado antes de pintar la página para
+       evitar un salto visual (misma llave que TamanoLetraService). */
+    (function () {
+      try {
+        var px = localStorage.getItem('ayni_tamano_letra');
+        if (px && ['15', '16', '18', '20'].indexOf(px) >= 0) {
+          document.documentElement.style.fontSize = px + 'px';
+        }
+      } catch (e) { /* modo privado: se mantiene el tamaño por defecto */ }
+    })();
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

@@ -16,6 +16,14 @@ uv run uvicorn app.main:app --host 127.0.0.1 --port 8000  # start API — README
 uv run pytest                                             # run backend/tests (DB-independent: fakes the connection)
 ```
 
+## Commands (run from `frontend/`)
+
+```powershell
+npm install     # first time only
+npm start       # ng serve → http://localhost:4200 (port fixed: backend CORS allowlist)
+npm run build   # typecheck + production build (ng build)
+```
+
 - Prereqs: SQL Server up (Docker, port 1433), `ODBC Driver 18 for SQL Server` (17 also auto-detected), `backend/.env` copied from `.env.example` (`DB_*`, `API_NINJAS_KEY`).
 - Tests: `uv run pytest` in `backend/` only (no frontend tests, no lint). `backend/tests/conftest.py` monkeypatches `app.core.database.obtener_conexion`, so tests never touch SQL Server. Also verify by starting the API and checking `/docs` and `/api/health`.
 - `pyproject.toml` sets `[tool.uv] package = false`: not an installable package. Run from `backend/` so `app.main:app` imports resolve. `.env` is loaded from `backend/.env` explicitly (path-independent).
