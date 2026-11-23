@@ -1,4 +1,4 @@
-"""Pruebas básicas de la API AYNI (no requieren SQL Server).
+"""Pruebas básicas de la API AYNI (no requieren base de datos).
 
 Cubren tres cosas: la documentación sigue sirviéndose, todos los routers
 registran sus rutas tras la reorganización en `app/apis/`, y se validan los

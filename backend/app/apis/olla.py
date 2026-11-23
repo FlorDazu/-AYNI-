@@ -1,6 +1,6 @@
 """HU-08: Panel de la dirigenta - estado diario y necesidades de su olla."""
 
-import pyodbc
+import psycopg
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.database import consultar_uno, ejecutar, get_db
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/olla", tags=["Panel dirigenta"])
 
 
 @router.get("/mi-olla", summary="Datos de la olla vinculada al usuario")
-def mi_olla(id_olla: int = Depends(get_id_olla_contexto), conn: pyodbc.Connection = Depends(get_db)):
+def mi_olla(id_olla: int = Depends(get_id_olla_contexto), conn: psycopg.Connection = Depends(get_db)):
     olla = consultar_uno(conn, SQL_OLLA_RESUMEN, id_olla)
     if olla is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se encontró la olla común.")
@@ -23,7 +23,7 @@ def mi_olla(id_olla: int = Depends(get_id_olla_contexto), conn: pyodbc.Connectio
 def actualizar_estado(
     datos: EstadoDiario,
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ):
     cambios = datos.model_dump(include=datos.model_fields_set)
     if "necesidades_urgentes" in cambios:

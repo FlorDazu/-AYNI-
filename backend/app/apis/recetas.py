@@ -1,15 +1,18 @@
 """HU-12: Calculadora de recetas locales, despacho atómico y recetario nutricional (API Ninjas)."""
 
+import asyncio
 import logging
-import os
+import re
 import unicodedata
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 import httpx
-import pyodbc
+import psycopg
+from deep_translator import GoogleTranslator
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from app.core.config import settings
 from app.core.database import consultar, ejecutar_sp, get_db
 from app.schemas import DespacharReceta
 from app.core.security import get_id_olla_contexto, get_usuario_actual
@@ -31,7 +34,7 @@ LEFT JOIN (
     SELECT id_insumo, SUM(cantidad_disponible) AS stock_vigente
     FROM dbo.lotes_inventario
     WHERE id_olla = ? AND estado = 'ACTIVO'
-      AND (fecha_vencimiento IS NULL OR fecha_vencimiento >= CAST(GETDATE() AS DATE))
+      AND (fecha_vencimiento IS NULL OR fecha_vencimiento >= CURRENT_DATE)
     GROUP BY id_insumo
 ) s ON s.id_insumo = ri.id_insumo
 WHERE r.activa = 1
@@ -91,7 +94,7 @@ def _armar_recetas(filas: list[dict[str, Any]], raciones: int | None) -> list[di
 def listar_recetas(
     raciones: int | None = Query(default=None, gt=0, le=10000, description="Raciones a preparar (por defecto: raciones base)"),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ):
     filas = consultar(conn, SQL_RECETAS + " ORDER BY r.id_receta, i.nombre", id_olla)
     return _armar_recetas(filas, raciones)
@@ -102,7 +105,7 @@ def despachar(
     datos: DespacharReceta,
     usuario: dict = Depends(get_usuario_actual),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ):
     filas = consultar(conn, SQL_RECETAS + " AND r.id_receta = ? ORDER BY i.nombre", id_olla, datos.id_receta)
     if not filas:
@@ -263,7 +266,7 @@ def _normalizar(item: dict[str, Any]) -> dict[str, Any]:
         nutricion = None
     return {
         "title": item.get("title") or item.get("name"),
-        "servings": item.get("servings"),
+        "servings": str(item["servings"]) if item.get("servings") not in (None, "") else None,
         "ingredients": _como_lista(item.get("ingredients")),
         "instructions": " ".join(pasos) or None,
         "pasos": pasos,
@@ -272,16 +275,139 @@ def _normalizar(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# ---------------------------------------------------------------------------
+# Traducción automática (GoogleTranslator de deep-translator, sin API key)
+# ---------------------------------------------------------------------------
+
+# Caché en memoria de búsquedas ya resueltas: llave = término buscado en
+# minúsculas y sin tildes. Guarda la respuesta de API Ninjas tal cual se
+# devolvió (en español si el traductor respondió, o en inglés si falló
+# temporalmente — el mismo respaldo del requisito), de modo que una búsqueda
+# repetida se responda al instante sin volver a llamar a Google ni a API Ninjas.
+_CACHE_RECETAS: dict[str, dict[str, Any]] = {}
+_CACHE_MAXIMO = 100
+_LIMITE_GOOGLE = 4500  # GoogleTranslator acepta menos de 5000 caracteres por llamada
+
+
+def _traducir_texto(traductor: GoogleTranslator, texto: str) -> str:
+    """Traduce un texto; si supera el límite de Google, lo parte en trozos por palabras."""
+    texto = texto.strip()
+    if not texto:
+        return texto
+    if len(texto) < _LIMITE_GOOGLE:
+        return (traductor.translate(texto) or texto).strip()
+    trozos: list[str] = []
+    actual = ""
+    for palabra in texto.split():
+        if actual and len(actual) + len(palabra) + 1 >= _LIMITE_GOOGLE:
+            trozos.append(actual)
+            actual = palabra
+        else:
+            actual = f"{actual} {palabra}".strip()
+    if actual:
+        trozos.append(actual)
+    return " ".join((traductor.translate(t) or t).strip() for t in trozos)
+
+
+def _traducir_lineas(traductor: GoogleTranslator, lineas: list[str]) -> list[str]:
+    """Traduce una lista de textos en una sola llamada (separados por salto de línea).
+
+    Si Google no conserva la cantidad de líneas, traduce elemento por elemento.
+    """
+    if not lineas:
+        return lineas
+    unidas = _traducir_texto(traductor, "\n".join(lineas))
+    traducidas = [linea.strip() for linea in unidas.split("\n") if linea.strip()]
+    if len(traducidas) == len(lineas):
+        return traducidas
+    return [(_traducir_texto(traductor, linea) or linea).strip() for linea in lineas]
+
+
+_RE_SERVINGS = re.compile(r"^\s*(\d+(?:\s*[-–]\s*\d+)?)\s*(servings?|portions?|people|persons?)?\s*$", re.IGNORECASE)
+
+
+def _servings_es(valor: Any) -> str | None:
+    """Normaliza `servings` de API Ninjas: 1 / "1 Servings" -> "1 porción"; "4 servings" -> "4 porciones".
+
+    Devuelve None si el valor no sigue el patrón numérico (entonces se traduce con Google).
+    """
+    if valor is None or isinstance(valor, bool):
+        return None
+    coincidencia = _RE_SERVINGS.match(str(valor))
+    if not coincidencia:
+        return None
+    numero = re.sub(r"\s+", "", coincidencia.group(1))
+    return f"{numero} {'porción' if numero == '1' else 'porciones'}"
+
+
+def _traducir_buscada(q: str) -> str:
+    """Español → inglés de la búsqueda con GoogleTranslator; si falla, usa el diccionario local."""
+    try:
+        traducido = GoogleTranslator(source="es", target="en").translate(q.strip())
+        if traducido and traducido.strip():
+            return traducido.strip()
+    except Exception as exc:  # noqa: BLE001 - cualquier fallo usa el traductor local
+        logger.warning(
+            "GoogleTranslator no pudo traducir la búsqueda «%s» (%s: %s); se usa el traductor local.",
+            q, type(exc).__name__, exc,
+        )
+    return traducir_consulta(q)
+
+
+def _traducir_receta(receta: dict[str, Any]) -> dict[str, Any]:
+    """Traduce al español `title`, `servings`, `ingredients`, `instructions` y `pasos`
+    de una receta, manteniendo intactas las llaves del JSON que espera Angular.
+
+    Si el traductor falla temporalmente, devuelve la receta original en inglés
+    sin propagar el error (sin 500).
+    """
+    try:
+        traductor = GoogleTranslator(source="en", target="es")
+        salida = dict(receta)
+        if receta.get("title"):
+            salida["title"] = _traducir_texto(traductor, str(receta["title"]))
+        servings = receta.get("servings")
+        if servings not in (None, ""):
+            salida["servings"] = _servings_es(servings) or _traducir_texto(traductor, str(servings))
+        if receta.get("ingredients"):
+            salida["ingredients"] = _traducir_lineas(traductor, list(receta["ingredients"]))
+        pasos = receta.get("pasos") or []
+        if pasos:
+            # `instructions` se deriva de los pasos traducidos para que ambos textos coincidan.
+            salida["pasos"] = _traducir_lineas(traductor, list(pasos))
+            salida["instructions"] = " ".join(salida["pasos"])
+        elif receta.get("instructions"):
+            salida["instructions"] = _traducir_texto(traductor, str(receta["instructions"]))
+        return salida
+    except Exception as exc:  # noqa: BLE001 - red o límite de Google: receta en inglés
+        logger.warning(
+            "No se pudo traducir la receta «%s» (%s: %s); se devuelve en inglés.",
+            receta.get("title"), type(exc).__name__, exc,
+        )
+        return receta
+
+
+def _traducir_recetas(recetas: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Traduce todas las recetas al español (si una falla, queda en inglés)."""
+    return [_traducir_receta(receta) for receta in recetas]
+
+
 @router.get("/externas", summary="Sugerencias de recetas con información nutricional (API Ninjas)")
 async def recetas_externas(
     q: str = Query(..., min_length=2, max_length=80, description="Ej.: lentejas, pollo, arroz, papa, atún, fideo, sopa"),
     _: dict = Depends(get_usuario_actual),
 ):
-    query_en = traducir_consulta(q)
-    api_key = os.getenv("API_NINJAS_KEY", "").strip()
+    # Búsqueda repetida: se responde al instante desde la caché en memoria.
+    clave = _sin_tildes(q.lower().strip())
+    if clave in _CACHE_RECETAS:
+        return {**_CACHE_RECETAS[clave], "consulta": q}
+
+    api_key = settings.api_ninjas_key
     aviso = None
 
     if api_key:
+        # 1) Español → inglés de la búsqueda antes de consultar API Ninjas.
+        query_en = await asyncio.to_thread(_traducir_buscada, q)
         try:
             async with httpx.AsyncClient(timeout=8.0) as cliente:
                 respuesta = await cliente.get(API_NINJAS_URL, params={"title": query_en}, headers={"X-Api-Key": api_key})
@@ -292,12 +418,20 @@ async def recetas_externas(
             recetas = [_normalizar(r) for r in datos if isinstance(r, dict)]
             recetas = [r for r in recetas if r["title"]]
             if recetas:
-                return {"consulta": q, "consulta_en": query_en, "fuente": "API Ninjas", "total": len(recetas), "recetas": recetas}
+                # 2) Inglés → español de cada receta (si Google falla, queda en inglés, sin 500).
+                recetas = await asyncio.to_thread(_traducir_recetas, recetas)
+                salida = {"consulta": q, "consulta_en": query_en, "fuente": "API Ninjas", "total": len(recetas), "recetas": recetas}
+                # Se guarda la respuesta para responder al instante las próximas veces.
+                if len(_CACHE_RECETAS) >= _CACHE_MAXIMO:
+                    _CACHE_RECETAS.pop(next(iter(_CACHE_RECETAS)))  # la más antigua
+                _CACHE_RECETAS[clave] = {k: v for k, v in salida.items() if k != "consulta"}
+                return salida
             aviso = "API Ninjas no encontró recetas para su búsqueda. Se muestran sugerencias locales."
         except (httpx.HTTPError, ValueError) as exc:
             logger.warning("Fallo al consultar API Ninjas: %s", exc)
             aviso = "No se pudo conectar con el recetario externo. Se muestran sugerencias locales."
     else:
+        query_en = traducir_consulta(q)
         aviso = "No se configuró API_NINJAS_KEY. Se muestran sugerencias locales."
 
     recetas = _respaldo(query_en)

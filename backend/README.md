@@ -1,17 +1,17 @@
-# AYNI – Backend (FastAPI + SQL Server)
+# AYNI – Backend (FastAPI + PostgreSQL/Supabase)
 
 API REST de la plataforma AYNI para la gestión de ollas comunes.
 
 ## Requisitos
 
 - [uv](https://docs.astral.sh/uv/) y Python 3.12+
-- SQL Server en Docker (puerto 1433 por defecto)
-- `ODBC Driver 18 for SQL Server` (o 17; se detecta automáticamente)
+- Proyecto de Supabase (PostgreSQL) con `../sql/001_ayni_postgres.sql` aplicado
+- Sin drivers nativos: `psycopg[binary]` + `psycopg_pool`
 
 ## Puesta en marcha
 
-1. Ejecute el script `../database/AyniOllasDB.SQL` en su SQL Server (crea la BD, tablas, SPs y datos semilla).
-2. Copie `.env.example` a `.env` y complete `DB_SERVER`, `DB_PASSWORD` y `API_NINJAS_KEY`.
+1. Ejecute `../sql/001_ayni_postgres.sql` en el SQL Editor de Supabase (crea el esquema `dbo`, tablas, funciones y datos semilla).
+2. Copie `.env.example` a `.env` y complete `DATABASE_URL` (Session pooler, contraseña URL-encodeada), `JWT_SECRET` y `API_NINJAS_KEY`. Toda la configuración se lee en `app/core/config.py`.
 3. Instale dependencias y levante la API (sin `--reload`):
 
 ```powershell
@@ -22,7 +22,7 @@ uv sync
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Documentación interactiva: http://127.0.0.1:8000/docs · Estado: http://127.0.0.1:8000/api/health
+Documentación interactiva: http://127.0.0.1:8000/docs · Estado: http://127.0.0.1:8000/api/health · BD: http://127.0.0.1:8000/health/db
 
 Al arrancar, la API reemplaza los `password_hash = 'PENDING_HASH'` por hashes bcrypt:
 

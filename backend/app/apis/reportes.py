@@ -5,7 +5,7 @@ import io
 from datetime import date, datetime, timedelta
 from typing import Literal
 
-import pyodbc
+import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 
@@ -68,11 +68,10 @@ def movimientos(
     fecha_hasta: date | None = Query(default=None, description="AAAA-MM-DD"),
     limite: int = Query(default=500, ge=1, le=5000),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ):
     sql, params = _filtrar_movimientos(id_olla, tipo, id_insumo, fecha_desde, fecha_hasta)
-    sql = sql.replace("SELECT m.id_movimiento", f"SELECT TOP ({limite}) m.id_movimiento", 1)
-    return consultar(conn, sql + " ORDER BY m.fecha_movimiento DESC, m.id_movimiento DESC", *params)
+    return consultar(conn, sql + " ORDER BY m.fecha_movimiento DESC, m.id_movimiento DESC LIMIT ?", *params, limite)
 
 
 @router.get("/reportes/resumen", summary="Reporte consolidado de la olla (JSON)")
@@ -80,7 +79,7 @@ def resumen(
     fecha_desde: date | None = Query(default=None, description="AAAA-MM-DD"),
     fecha_hasta: date | None = Query(default=None, description="AAAA-MM-DD"),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ):
     _validar_rango(fecha_desde, fecha_hasta)
     desde = datetime.combine(fecha_desde, datetime.min.time()) if fecha_desde else datetime(1900, 1, 1)
@@ -122,8 +121,8 @@ def resumen(
         """SELECT semaforo, COUNT(*) AS lotes FROM (
                SELECT CASE
                    WHEN fecha_vencimiento IS NULL THEN 'VIGENTE'
-                   WHEN fecha_vencimiento < CAST(GETDATE() AS DATE) THEN 'VENCIDO'
-                   WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), fecha_vencimiento) <= 7 THEN 'POR_VENCER'
+                   WHEN fecha_vencimiento < CURRENT_DATE THEN 'VENCIDO'
+                   WHEN (fecha_vencimiento - CURRENT_DATE) <= 7 THEN 'POR_VENCER'
                    ELSE 'VIGENTE' END AS semaforo
                FROM dbo.lotes_inventario
                WHERE id_olla = ? AND estado = 'ACTIVO' AND cantidad_disponible > 0
@@ -165,7 +164,7 @@ def exportar_csv(
     fecha_desde: date | None = Query(default=None, description="AAAA-MM-DD"),
     fecha_hasta: date | None = Query(default=None, description="AAAA-MM-DD"),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ):
     if tipo == "movimientos":
         sql, params = _filtrar_movimientos(id_olla, None, None, fecha_desde, fecha_hasta)
