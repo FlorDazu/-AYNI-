@@ -1,6 +1,6 @@
 """HU-14: Gestión total del administrador (ollas y usuarios). Solo rol ADMIN."""
 
-import pyodbc
+import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.database import consultar, consultar_uno, ejecutar, get_db
@@ -23,7 +23,7 @@ WHERE 1 = 1
 SQL_USUARIOS_ADMIN = """
 SELECT us.id_usuario, us.nombre_completo, us.username, us.telefono, us.rol, us.activo,
        us.intentos_fallidos, us.bloqueado_hasta,
-       CAST(CASE WHEN us.bloqueado_hasta > SYSDATETIME() THEN 1 ELSE 0 END AS BIT) AS bloqueado,
+       COALESCE(us.bloqueado_hasta > CURRENT_TIMESTAMP, FALSE) AS bloqueado,
        us.fecha_creacion, us.id_olla, o.codigo_unico AS codigo_olla, o.nombre AS nombre_olla,
        o.activada AS olla_activada
 FROM dbo.usuarios us
@@ -36,20 +36,20 @@ WHERE 1 = 1
 def listar_ollas(
     activada: bool | None = Query(default=None),
     q: str | None = Query(default=None, max_length=100, description="Buscar por nombre o código"),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ):
     sql, params = SQL_OLLAS_ADMIN, []
     if activada is not None:
         sql += " AND o.activada = ?"
         params.append(activada)
     if q:
-        sql += " AND (o.nombre LIKE ? OR o.codigo_unico LIKE ?)"
+        sql += " AND (o.nombre ILIKE ? OR o.codigo_unico ILIKE ?)"
         params.extend([f"%{q.strip()}%"] * 2)
     return consultar(conn, sql + " ORDER BY o.id_olla", *params)
 
 
 @router.patch("/ollas/{id_olla}/estado", summary="Activar o desactivar una olla")
-def cambiar_estado_olla(id_olla: int, datos: OllaEstadoAdmin, conn: pyodbc.Connection = Depends(get_db)):
+def cambiar_estado_olla(id_olla: int, datos: OllaEstadoAdmin, conn: psycopg.Connection = Depends(get_db)):
     if ejecutar(conn, "UPDATE dbo.ollas SET activada = ? WHERE id_olla = ?", datos.activada, id_olla) == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La olla común indicada no existe.")
     olla = consultar_uno(conn, SQL_OLLAS_ADMIN + " AND o.id_olla = ?", id_olla)
@@ -62,7 +62,7 @@ def listar_usuarios(
     rol: str | None = Query(default=None, description="ADMIN o DIRIGENTA"),
     activo: bool | None = Query(default=None),
     q: str | None = Query(default=None, max_length=100, description="Buscar por nombre o usuario"),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ):
     sql, params = SQL_USUARIOS_ADMIN, []
     if rol:
@@ -72,7 +72,7 @@ def listar_usuarios(
         sql += " AND us.activo = ?"
         params.append(activo)
     if q:
-        sql += " AND (us.nombre_completo LIKE ? OR us.username LIKE ?)"
+        sql += " AND (us.nombre_completo ILIKE ? OR us.username ILIKE ?)"
         params.extend([f"%{q.strip()}%"] * 2)
     return consultar(conn, sql + " ORDER BY us.id_usuario", *params)
 
@@ -82,7 +82,7 @@ def actualizar_usuario(
     id_usuario: int,
     datos: UsuarioAdminUpdate,
     admin: dict = Depends(requiere_admin),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ):
     if consultar_uno(conn, "SELECT id_usuario FROM dbo.usuarios WHERE id_usuario = ?", id_usuario) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El usuario indicado no existe.")

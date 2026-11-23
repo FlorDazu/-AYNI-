@@ -1,20 +1,20 @@
 """Hash de contraseñas (bcrypt), JWT y dependencias de autenticación/roles."""
 
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import pyodbc
+import psycopg
 from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import ExpiredSignatureError, JWTError, jwt
 from passlib.context import CryptContext
 
+from app.core.config import settings
 from app.core.database import consultar_uno, get_db
 
-JWT_SECRET = os.getenv("JWT_SECRET", "ayni_super_secret_jwt_key_2026_cambiar")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "480"))
+JWT_SECRET = settings.jwt_secret
+JWT_ALGORITHM = settings.jwt_algorithm
+JWT_EXPIRE_MINUTES = settings.jwt_expire_minutes
 
 MAX_INTENTOS_FALLIDOS = 5
 MINUTOS_BLOQUEO = 15
@@ -64,7 +64,7 @@ _NO_AUTENTICADO = HTTPException(
 
 def get_usuario_actual(
     credenciales: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ) -> dict[str, Any]:
     """Valida el JWT y vuelve a verificar en BD que la cuenta y su olla sigan activas."""
     if credenciales is None or not credenciales.credentials:
@@ -117,7 +117,7 @@ def get_id_olla_contexto(
         gt=0,
         description="Solo para ADMIN: olla a consultar/gestionar. Las dirigentas usan siempre su propia olla.",
     ),
-    conn: pyodbc.Connection = Depends(get_db),
+    conn: psycopg.Connection = Depends(get_db),
 ) -> int:
     """Determina sobre qué olla opera la petición.
 

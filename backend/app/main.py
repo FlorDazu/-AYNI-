@@ -8,15 +8,16 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
-import pyodbc
-from fastapi import FastAPI, Request, status
+import psycopg
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.core.database import consultar, consultar_uno, ejecutar, obtener_conexion, traducir_error_sql
 from app.apis import admin, auth, donaciones, inventario, olla, public, recetas, reportes
+from app.core.config import settings
+from app.core.database import close_pool, consultar, consultar_uno, ejecutar, obtener_conexion, traducir_error_sql
 from app.core.security import hash_password
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
@@ -47,22 +48,25 @@ def actualizar_hashes_pendientes() -> None:
             )
             logger.info("Contraseña semilla inicializada para %s", username)
         if not pendientes:
-            logger.info("Conexión a SQL Server correcta. No hay contraseñas pendientes por inicializar.")
+            logger.info("Conexión a PostgreSQL correcta. No hay contraseñas pendientes por inicializar.")
     finally:
         conn.close()
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    for aviso in settings.advertencias():
+        logger.warning("Configuración: %s", aviso)
     try:
         actualizar_hashes_pendientes()
-    except Exception as exc:  # noqa: BLE001 - la API debe arrancar aunque Docker no esté listo
+    except Exception as exc:  # noqa: BLE001 - la API debe arrancar aunque la BD no esté lista
         logger.warning(
-            "No se pudieron inicializar las contraseñas semilla (¿está encendido el contenedor de SQL Server "
-            "y ejecutado el script AyniOllasDB.SQL?). La API seguirá funcionando. Detalle: %s",
+            "No se pudieron inicializar las contraseñas semilla (PostgreSQL no disponible o script pendiente). "
+            "La API seguirá funcionando. Detalle: %s",
             exc,
         )
     yield
+    close_pool()
 
 
 app = FastAPI(
@@ -75,7 +79,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -176,8 +180,8 @@ async def manejar_http(_: Request, exc: StarletteHTTPException) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"detail": detalle}, headers=getattr(exc, "headers", None))
 
 
-@app.exception_handler(pyodbc.Error)
-async def manejar_pyodbc(_: Request, exc: pyodbc.Error) -> JSONResponse:
+@app.exception_handler(psycopg.Error)
+async def manejar_psycopg(_: Request, exc: psycopg.Error) -> JSONResponse:
     http_exc = traducir_error_sql(exc)
     return JSONResponse(status_code=http_exc.status_code, content={"detail": http_exc.detail})
 
@@ -219,5 +223,34 @@ def health() -> dict[str, Any]:
         finally:
             conn.close()
         return {"api": "ok", "base_datos": "ok"}
-    except pyodbc.Error as exc:
+    except psycopg.Error as exc:
         return {"api": "ok", "base_datos": "sin conexión", "detalle": traducir_error_sql(exc).detail}
+    except Exception as exc:
+        return {"api": "ok", "base_datos": "sin conexión", "detalle": str(exc)}
+
+
+@app.get("/health/db", tags=["Sistema"], summary="Comprobación de salud de la base de datos PostgreSQL")
+def health_db() -> dict[str, str]:
+    if not settings.database_url:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="DATABASE_URL no configurada en las variables de entorno.",
+        )
+    try:
+        conn = obtener_conexion()
+        try:
+            consultar_uno(conn, "SELECT 1 AS ok")
+        finally:
+            conn.close()
+        return {"status": "ok"}
+    except psycopg.OperationalError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo establecer conexión con PostgreSQL.",
+        )
+    except Exception as exc:
+        logger.warning("Error en comprobación /health/db: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Servicio de base de datos no disponible.",
+        )

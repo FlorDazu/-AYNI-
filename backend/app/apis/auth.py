@@ -2,7 +2,7 @@
 
 from typing import Any
 
-import pyodbc
+import psycopg
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.database import consultar_uno, ejecutar, ejecutar_sp, get_db
@@ -41,7 +41,7 @@ def _perfil(usuario: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _respuesta_sesion(conn: pyodbc.Connection, usuario: dict[str, Any], mensaje: str) -> dict[str, Any]:
+def _respuesta_sesion(conn: psycopg.Connection, usuario: dict[str, Any], mensaje: str) -> dict[str, Any]:
     olla = consultar_uno(conn, SQL_OLLA_RESUMEN, usuario["id_olla"]) if usuario["id_olla"] else None
     return {
         "mensaje": mensaje,
@@ -64,7 +64,7 @@ def _respuesta_sesion(conn: pyodbc.Connection, usuario: dict[str, Any], mensaje:
     summary="Alias de /registro-olla",
     include_in_schema=True,
 )
-def registrar_olla_y_cuenta(datos: RegistroOllaCuenta, conn: pyodbc.Connection = Depends(get_db)):
+def registrar_olla_y_cuenta(datos: RegistroOllaCuenta, conn: psycopg.Connection = Depends(get_db)):
     creado = ejecutar_sp(
         conn,
         """EXEC dbo.sp_CrearCuentaDirigenta
@@ -91,12 +91,12 @@ def registrar_olla_y_cuenta(datos: RegistroOllaCuenta, conn: pyodbc.Connection =
 
 
 @router.post("/login", summary="Iniciar sesión (usuario o correo + contraseña)")
-def login(datos: LoginRequest, conn: pyodbc.Connection = Depends(get_db)):
+def login(datos: LoginRequest, conn: psycopg.Connection = Depends(get_db)):
     credencial = consultar_uno(
         conn,
         """SELECT id_usuario, password_hash, intentos_fallidos, bloqueado_hasta,
-                  CASE WHEN bloqueado_hasta > SYSDATETIME()
-                       THEN DATEDIFF(SECOND, SYSDATETIME(), bloqueado_hasta) ELSE 0 END AS segundos_bloqueo
+                  CASE WHEN bloqueado_hasta > CURRENT_TIMESTAMP
+                       THEN CEIL(EXTRACT(EPOCH FROM (bloqueado_hasta - CURRENT_TIMESTAMP)))::INT ELSE 0 END AS segundos_bloqueo
            FROM dbo.usuarios WHERE username = ?""",
         datos.username,
     )
@@ -127,7 +127,7 @@ def login(datos: LoginRequest, conn: pyodbc.Connection = Depends(get_db)):
             """UPDATE dbo.usuarios
                SET intentos_fallidos = intentos_fallidos + 1,
                    bloqueado_hasta = CASE WHEN intentos_fallidos + 1 >= ?
-                                          THEN DATEADD(MINUTE, ?, SYSDATETIME()) ELSE NULL END
+                                          THEN CURRENT_TIMESTAMP + make_interval(mins => ?::INT) ELSE NULL END
                OUTPUT inserted.intentos_fallidos
                WHERE id_usuario = ?""",
             MAX_INTENTOS_FALLIDOS,
@@ -166,6 +166,6 @@ def login(datos: LoginRequest, conn: pyodbc.Connection = Depends(get_db)):
 
 
 @router.get("/me", summary="Perfil del usuario autenticado")
-def me(usuario: dict = Depends(get_usuario_actual), conn: pyodbc.Connection = Depends(get_db)):
+def me(usuario: dict = Depends(get_usuario_actual), conn: psycopg.Connection = Depends(get_db)):
     olla = consultar_uno(conn, SQL_OLLA_RESUMEN, usuario["id_olla"]) if usuario["id_olla"] else None
     return {**_perfil(usuario), "activo": bool(usuario["activo"]), "fecha_creacion": usuario["fecha_creacion"], "olla": olla}
