@@ -62,6 +62,12 @@ export class Contactanos {
     this.enviado.set(false);
   }
 
+  /** true si el campo ya fue tocado y sigue inválido (para el estilo de Bootstrap). */
+  esInvalido(campo: string): boolean {
+    const control = this.formulario.get(campo);
+    return !!control && control.invalid && control.touched;
+  }
+
   /** Mensaje de error en español para un campo, o '' si es válido. */
   errorDe(campo: string): string {
     const control = this.formulario.get(campo);
