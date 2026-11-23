@@ -1687,14 +1687,9 @@ textarea:focus-visible,
 
 /* =========================================================================
    4 · Contáctanos: información institucional + formulario reactivo
+   La rejilla de dos columnas usa el grid responsivo de Bootstrap
+   (`row g-4` + `col-12 col-lg-5` / `col-12 col-lg-7`).
    ========================================================================= */
-
-.contacto-rejilla {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 22px;
-  align-items: start;
-}
 
 .contacto-dato {
   display: flex;
@@ -1741,12 +1736,6 @@ textarea:focus-visible,
 .campo-invalido .selector,
 .campo-invalido .area {
   border-color: var(--rojo);
-}
-
-.mensaje-error {
-  font-size: 0.8rem;
-  color: var(--rojo);
-  font-weight: 600;
 }
 
 /* =========================================================================
@@ -1807,8 +1796,7 @@ textarea:focus-visible,
 
   .rejilla-tres,
   .rejilla-dos,
-  .huella-rejilla,
-  .contacto-rejilla { grid-template-columns: 1fr; }
+  .huella-rejilla { grid-template-columns: 1fr; }
 
   .vitrina-rejilla { grid-template-columns: 1fr; }
 }
