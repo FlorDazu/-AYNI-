@@ -12,9 +12,11 @@
 
 <!-- ============================================= INFORMACIÓN + FORMULARIO -->
 <section class="envoltorio mt-4" style="padding-bottom: 30px">
-  <div class="contacto-rejilla">
+  <!-- Rejilla responsiva de Bootstrap: 5/12 en pantallas grandes y apilado
+       en móvil, con 24px de separación (g-4). -->
+  <div class="row g-4 align-items-start">
     <!-- ------------------------------------------- columna izquierda -->
-    <aside class="tarjeta">
+    <aside class="tarjeta col-12 col-lg-5">
       <div class="tarjeta-titulo">Información de contacto</div>
 
       <div class="contacto-dato">
@@ -101,7 +103,7 @@
     </aside>
 
     <!-- ------------------------------------------- columna derecha -->
-    <div class="tarjeta">
+    <div class="tarjeta col-12 col-lg-7">
       <div class="tarjeta-titulo">Envíanos un mensaje</div>
 
       @if (enviado()) {
@@ -122,14 +124,15 @@
             <label class="etiqueta" for="c-nombre">Nombre completo <span class="req">*</span></label>
             <input
               id="c-nombre"
-              class="entrada"
+              class="entrada form-control"
               type="text"
               autocomplete="name"
               placeholder="Ej.: María Quispe Salazar"
               formControlName="nombre"
+              [class.is-invalid]="esInvalido('nombre')"
             />
             @if (errorDe('nombre'); as error) {
-              <span class="mensaje-error" role="alert">{{ error }}</span>
+              <div class="invalid-feedback d-block" role="alert">{{ error }}</div>
             }
           </div>
 
@@ -137,14 +140,15 @@
             <label class="etiqueta" for="c-contacto">Correo o teléfono <span class="req">*</span></label>
             <input
               id="c-contacto"
-              class="entrada"
+              class="entrada form-control"
               type="text"
               autocomplete="email"
               placeholder="Ej.: contacto@correo.com o 987654321"
               formControlName="contacto"
+              [class.is-invalid]="esInvalido('contacto')"
             />
             @if (errorDe('contacto'); as error) {
-              <span class="mensaje-error" role="alert">{{ error }}</span>
+              <div class="invalid-feedback d-block" role="alert">{{ error }}</div>
             }
           </div>
 
@@ -158,7 +162,7 @@
               <option value="Alianza institucional">Alianza institucional</option>
             </select>
             @if (errorDe('tipo'); as error) {
-              <span class="mensaje-error" role="alert">{{ error }}</span>
+              <div class="invalid-feedback d-block" role="alert">{{ error }}</div>
             }
           </div>
 
@@ -166,13 +170,14 @@
             <label class="etiqueta" for="c-mensaje">Mensaje <span class="req">*</span></label>
             <textarea
               id="c-mensaje"
-              class="area"
+              class="area form-control"
               rows="5"
               placeholder="Cuéntenos en qué le podemos ayudar…"
               formControlName="mensaje"
+              [class.is-invalid]="esInvalido('mensaje')"
             ></textarea>
             @if (errorDe('mensaje'); as error) {
-              <span class="mensaje-error" role="alert">{{ error }}</span>
+              <div class="invalid-feedback d-block" role="alert">{{ error }}</div>
             }
           </div>
 

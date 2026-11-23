@@ -207,11 +207,17 @@ Se ejecuta en cada *push* a `main` / `master` / `frontend` y en cada *pull reque
 
 ---
 
-## 7 · Gestión de Accesos (Entorno Local)
+## 7 · Usuarios de Prueba (Entorno Local)
 
-Por motivos de seguridad y buenas prácticas, **no se publican credenciales ni cuentas de prueba en el repositorio**.
+Definidos en los datos semilla de `sql/001_ayni_postgres.sql`:
 
-Los usuarios iniciales y sus roles se definen de manera protegida en el script de base de datos (`sql/001_ayni_postgres.sql`), y sus contraseñas se inicializan mediante la configuración local de la API al arrancar. **No hay claves ni accesos expuestos en el control de versiones.**
+| Correo | Rol | Olla vinculada |
+|---|---|---|
+| `admin@ayni.org` | **ADMIN** | — |
+| `dirigenta@ayni.org` | **DIRIGENTA** | Olla 1 |
+| `maria.condori@ayni.org` | **DIRIGENTA** | Olla 2 |
+
+La contraseña inicial de estas cuentas se define **localmente** al arrancar la API (se reemplaza el `PENDING_HASH` semilla). **No hay claves de producción en el repositorio.**
 
 ---
 
