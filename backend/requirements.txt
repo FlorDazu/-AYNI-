@@ -56,12 +56,6 @@ opentelemetry-api==1.45.2
     # via fastapi
 passlib==1.7.4
     # via ayni-backend
-psycopg==3.3.9
-    # via ayni-backend
-psycopg-binary==3.3.9 ; implementation_name != 'pypy'
-    # via psycopg
-psycopg-pool==3.3.3
-    # via ayni-backend
 pyasn1==0.6.5
     # via
     #   python-jose
@@ -76,6 +70,8 @@ pydantic==2.14.4
 pydantic-core==2.50.5
     # via pydantic
 pydantic-settings==2.16.3
+    # via ayni-backend
+pyodbc==5.5.0
     # via ayni-backend
 python-dotenv==1.2.4
     # via
@@ -99,8 +95,6 @@ typing-extensions==4.16.0
     #   beautifulsoup4
     #   fastapi
     #   opentelemetry-api
-    #   psycopg
-    #   psycopg-pool
     #   pydantic
     #   pydantic-core
     #   pydantic-settings
@@ -111,8 +105,6 @@ typing-inspection==0.4.5
     #   fastapi
     #   pydantic
     #   pydantic-settings
-tzdata==2026.6 ; sys_platform == 'win32'
-    # via psycopg
 urllib3==2.8.0
     # via requests
 uvicorn==0.54.0

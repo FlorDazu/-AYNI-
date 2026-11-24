@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import psycopg
+import pyodbc
 from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import ExpiredSignatureError, JWTError, jwt
@@ -64,7 +64,7 @@ _NO_AUTENTICADO = HTTPException(
 
 def get_usuario_actual(
     credenciales: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ) -> dict[str, Any]:
     """Valida el JWT y vuelve a verificar en BD que la cuenta y su olla sigan activas."""
     if credenciales is None or not credenciales.credentials:
@@ -117,7 +117,7 @@ def get_id_olla_contexto(
         gt=0,
         description="Solo para ADMIN: olla a consultar/gestionar. Las dirigentas usan siempre su propia olla.",
     ),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ) -> int:
     """Determina sobre qué olla opera la petición.
 

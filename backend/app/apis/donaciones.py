@@ -1,6 +1,6 @@
 """HU-09 / HU-10: Donantes (registro manual) y donaciones monetarias o en especie."""
 
-import psycopg
+import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.database import consultar, consultar_uno, ejecutar_en_cursor, ejecutar_sp, get_db, transaccion
@@ -28,7 +28,7 @@ def listar_donantes(
     es_frecuente: bool | None = None,
     q: str | None = Query(default=None, max_length=100, description="Buscar por nombre o documento"),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     sql, params = SQL_DONANTE, [id_olla]
     if tipo_donante:
@@ -38,7 +38,7 @@ def listar_donantes(
         sql += " AND d.es_frecuente = ?"
         params.append(es_frecuente)
     if q:
-        sql += " AND (d.nombre_razon_social ILIKE ? OR d.documento ILIKE ?)"
+        sql += " AND (d.nombre_razon_social LIKE ? OR d.documento LIKE ?)"
         params.extend([f"%{q.strip()}%"] * 2)
     sql += " ORDER BY d.es_frecuente DESC, d.nombre_razon_social"
     return consultar(conn, sql, *params)
@@ -48,7 +48,7 @@ def listar_donantes(
 def crear_donante(
     datos: DonanteCrear,
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     if datos.documento and consultar_uno(
         conn, "SELECT 1 AS existe FROM dbo.donantes WHERE id_olla = ? AND documento = ?", id_olla, datos.documento
@@ -83,7 +83,7 @@ def listar_donaciones(
     tipo_donacion: str | None = Query(default=None, description="ESPECIE o MONETARIA"),
     id_donante: int | None = Query(default=None, gt=0),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     sql = """
         SELECT dn.id_donacion, dn.tipo_donacion, dn.monto_soles, dn.comprobante, dn.descripcion,
@@ -124,7 +124,7 @@ def crear_donacion(
     datos: DonacionCrear,
     usuario: dict = Depends(get_usuario_actual),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     if datos.id_donante and not consultar_uno(
         conn, "SELECT 1 AS existe FROM dbo.donantes WHERE id_donante = ? AND id_olla = ?", datos.id_donante, id_olla

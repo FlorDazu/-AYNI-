@@ -1,17 +1,17 @@
-# AYNI – Backend (FastAPI + PostgreSQL/Supabase)
+# AYNI – Backend (FastAPI + SQL Server)
 
 API REST de la plataforma AYNI para la gestión de ollas comunes.
 
 ## Requisitos
 
 - [uv](https://docs.astral.sh/uv/) y Python 3.12+
-- Proyecto de Supabase (PostgreSQL) con `../sql/001_ayni_postgres.sql` aplicado
-- Sin drivers nativos: `psycopg[binary]` + `psycopg_pool`
+- SQL Server (instancia Express local `localhost\SQLEXPRESS` o Docker en el puerto 1433) y SQL Server Management Studio (SSMS)
+- `ODBC Driver 18 for SQL Server` (o 17; se detecta automáticamente)
 
 ## Puesta en marcha
 
-1. Ejecute `../sql/001_ayni_postgres.sql` en el SQL Editor de Supabase (crea el esquema `dbo`, tablas, funciones y datos semilla).
-2. Copie `.env.example` a `.env` y complete `DATABASE_URL` (Session pooler, contraseña URL-encodeada), `JWT_SECRET` y `API_NINJAS_KEY`. Toda la configuración se lee en `app/core/config.py`.
+1. Ejecute el script `../database/AyniOllasDB.SQL` en su SQL Server (crea la BD, tablas, SPs y datos semilla).
+2. Copie `.env.example` a `.env` y complete `DB_SERVER`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (o `DB_TRUSTED_CONNECTION=true` para autenticación de Windows), `JWT_SECRET` y `API_NINJAS_KEY`. Toda la configuración se lee en `app/core/config.py` (`pydantic-settings`).
 3. Instale dependencias y levante la API (sin `--reload`):
 
 ```powershell
@@ -22,7 +22,7 @@ uv sync
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Documentación interactiva: http://127.0.0.1:8000/docs · Estado: http://127.0.0.1:8000/api/health · BD: http://127.0.0.1:8000/health/db
+Documentación interactiva: http://127.0.0.1:8000/docs · Estado: http://127.0.0.1:8000/api/health · BD: http://127.0.0.1:8000/health/db (`{"status": "ok"}` o `503`)
 
 Al arrancar, la API reemplaza los `password_hash = 'PENDING_HASH'` por hashes bcrypt:
 
@@ -53,3 +53,8 @@ Al arrancar, la API reemplaza los `password_hash = 'PENDING_HASH'` por hashes bc
 
 Las rutas con datos de una olla usan la olla de la dirigenta autenticada. Un `ADMIN` puede consultarlas
 indicando `?id_olla=N`.
+
+## Entorno local vs. despliegue
+
+Este repositorio es la versión **local** del proyecto (SQL Server + SSMS). La versión desplegada en la nube vive en
+repositorios separados: `FlorDazu/Backend` (PostgreSQL en Supabase, Docker en Render) y `FlorDazu/Frontend` (Render).

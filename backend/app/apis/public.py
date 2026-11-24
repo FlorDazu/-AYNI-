@@ -1,6 +1,6 @@
 """HU-01 a HU-04: Portal público (KPIs, búsqueda geográfica, ficha y registro directo)."""
 
-import psycopg
+import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.database import consultar, consultar_uno, ejecutar_sp, get_db
@@ -20,7 +20,7 @@ WHERE o.activada = 1
 
 
 @router.get("/kpis", summary="Indicadores de impacto en tiempo real")
-def kpis(conn: psycopg.Connection = Depends(get_db)):
+def kpis(conn: pyodbc.Connection = Depends(get_db)):
     return consultar_uno(
         conn,
         """SELECT
@@ -39,7 +39,7 @@ def kpis(conn: psycopg.Connection = Depends(get_db)):
 def ubigeos(
     departamento: str | None = Query(default=None, max_length=80),
     provincia: str | None = Query(default=None, max_length=80),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     sql = "SELECT id_ubigeo, departamento, provincia, distrito FROM dbo.ubigeos WHERE 1 = 1"
     params: list = []
@@ -62,7 +62,7 @@ def listar_ollas(
     atiende_hoy: bool | None = Query(default=None),
     recibe_frescos: bool | None = Query(default=None),
     q: str | None = Query(default=None, max_length=100, description="Buscar por nombre o código"),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     sql = SQL_OLLA_PUBLICA
     params: list = []
@@ -80,7 +80,7 @@ def listar_ollas(
         sql += f" AND {columna} = ?"
         params.append(valor.strip() if isinstance(valor, str) else valor)
     if q:
-        sql += " AND (o.nombre ILIKE ? OR o.codigo_unico ILIKE ?)"
+        sql += " AND (o.nombre LIKE ? OR o.codigo_unico LIKE ?)"
         patron = f"%{q.strip()}%"
         params.extend([patron, patron])
     sql += " ORDER BY o.atiende_hoy DESC, o.nombre"
@@ -88,7 +88,7 @@ def listar_ollas(
 
 
 @router.get("/ollas/{id_olla}", summary="Ficha pública detallada de una olla")
-def detalle_olla(id_olla: int, conn: psycopg.Connection = Depends(get_db)):
+def detalle_olla(id_olla: int, conn: pyodbc.Connection = Depends(get_db)):
     olla = consultar_uno(conn, SQL_OLLA_PUBLICA + " AND o.id_olla = ?", id_olla)
     if olla is None:
         raise HTTPException(
@@ -99,7 +99,7 @@ def detalle_olla(id_olla: int, conn: psycopg.Connection = Depends(get_db)):
 
 
 @router.post("/ollas", status_code=status.HTTP_201_CREATED, summary="Registro directo de nueva olla común")
-def registrar_olla(datos: OllaRegistro, conn: psycopg.Connection = Depends(get_db)):
+def registrar_olla(datos: OllaRegistro, conn: pyodbc.Connection = Depends(get_db)):
     creada = ejecutar_sp(
         conn,
         """EXEC dbo.sp_RegistrarOlla @nombre = ?, @id_ubigeo = ?, @direccion = ?,

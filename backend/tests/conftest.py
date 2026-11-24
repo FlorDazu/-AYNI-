@@ -13,7 +13,7 @@ from app.main import app
 
 
 class ConexionFalsa:
-    """Doble de conexión para no necesitar PostgreSQL en los tests.
+    """Doble de conexión para no necesitar SQL Server en los tests.
 
     Solo se usan los métodos que las dependencias `Depends(get_db)` llegan a
     tocar en las rutas que se prueban; cualquier intento real de consulta
