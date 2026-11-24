@@ -12,7 +12,7 @@ El nombre hace referencia al *ayni* andino: la reciprocidad como motor de la com
 |---|---|
 | **Frontend** | **Angular 22** (TypeScript, standalone components + signals, rutas con carga diferida) · CSS moderno responsivo con soporte de accesibilidad **WCAG 2.1 AA** (enfoque visible, objetivos táctiles de 48 px, salto al contenido, control de tamaño de letra `A− / A+`) · **Bootstrap 5.0.2** (CDN) como base de utilidades y grid |
 | **Backend** | **Python 3.12 + FastAPI** · gestión de paquetes con [**uv**](https://docs.astral.sh/uv/) y archivo **`requirements.txt`** (compatible con `pip`) |
-| **Base de datos** | **PostgreSQL en Supabase** (Session pooler) vía **`psycopg` 3 + `psycopg_pool`** · modelo normalizado en **3FN** · lógica de negocio en **funciones PL/pgSQL** |
+| **Base de datos** | **Microsoft SQL Server** (administrado con **SQL Server Management Studio**) vía **`pyodbc`** · modelo normalizado en **3FN** · lógica de negocio en **Procedimientos Almacenados** |
 | **Seguridad y calidad** | Autenticación **JWT** (8 h) con control de acceso por roles · contraseñas hasheadas con **bcrypt / passlib** · pruebas con **pytest + httpx** (`TestClient`) · **GitHub Actions** (CI) |
 
 ---
@@ -24,12 +24,12 @@ El nombre hace referencia al *ayni* andino: la reciprocidad como motor de la com
 │
 ├── .github/workflows/ci.yml      ← CI: pytest (backend) + ng build (frontend)
 │
-├── backend/                      ← API REST (FastAPI + PostgreSQL/Supabase)
+├── backend/                      ← API REST (FastAPI + SQL Server)
 │   ├── app/
 │   │   ├── apis/                 ← [CAPA API] los 8 routers: admin, auth, donaciones,
 │   │   │                             inventario, olla, public, recetas, reportes
 │   │   ├── core/                 ← [NÚCLEO] config.py (variables de entorno, pydantic-settings)
-│   │   │                             database.py (pool psycopg + helpers SQL)
+│   │   │                             database.py (conexión pyodbc + helpers SQL)
 │   │   │                             security.py (JWT, bcrypt, dependencias de rol)
 │   │   ├── schemas/              ← [CAPA ESQUEMAS] modelos Pydantic de validación
 │   │   │                             (app/schemas/__init__.py reexporta .schemas)
@@ -39,8 +39,6 @@ El nombre hace referencia al *ayni* andino: la reciprocidad como motor de la com
 │   ├── tests/                    ← pruebas pytest (conftest.py + test_api.py)
 │   ├── requirements.txt          ← dependencias exportadas con uv
 │   ├── pyproject.toml / uv.lock
-│   ├── Dockerfile                ← imagen de producción (Render): Python 3.12 slim + uv
-│   ├── .dockerignore             ← deja fuera .env, .venv, tests y cachés
 │   └── .env.example              ← plantilla de variables de entorno
 │
 ├── frontend/                     ← SPA Angular (puerto 4200)
@@ -55,8 +53,8 @@ El nombre hace referencia al *ayni* andino: la reciprocidad como motor de la com
 │       │   └── admin/            ← ollas-admin, usuarios-admin, auditoría
 │       └── styles.css            ← sistema de diseño global (paleta AYNI)
 │
-├── sql/
-│   └── 001_ayni_postgres.sql     ← esquema PostgreSQL de referencia: tablas, funciones y datos semilla
+├── database/
+│   └── AyniOllasDB.SQL           ← script completo de SQL Server: BD, 11 tablas, 6 SPs y datos semilla
 │
 ├── README.md                     ← este documento
 ├── AGENTS.md                     ← guía para agentes de código
@@ -78,13 +76,13 @@ El nombre hace referencia al *ayni* andino: la reciprocidad como motor de la com
                 repositories/  (acceso a datos — preparado)
                      │
                      ▼
-                core/          (config.py: settings · database.py: pool psycopg · security.py: JWT/roles)
+                core/          (config.py: settings · database.py: pyodbc · security.py: JWT/roles)
                      │
                      ▼
-                PostgreSQL / Supabase (funciones PL/pgSQL + SQL en línea)
+                SQL Server     (Procedimientos Almacenados + SQL en línea)
 ```
 
-> Hoy la lógica de negocio vive en las **funciones PL/pgSQL** (`sp_registrar_olla`, `sp_registrar_salida_peps`, `sp_despachar_receta_atomica`, …); las capas `services/` y `repositories/` están creadas para futuras extracciones **sin mover todavía ninguna función probada**.
+> Hoy la lógica de negocio vive en los **Procedimientos Almacenados** (`sp_RegistrarOlla`, `sp_RegistrarSalidaPEPS`, `sp_DespacharRecetaAtomica`, …); las capas `services/` y `repositories/` están creadas para futuras extracciones **sin mover todavía ninguna función probada**.
 
 ---
 
@@ -127,16 +125,19 @@ El nombre hace referencia al *ayni* andino: la reciprocidad como motor de la com
 
 ### Prerrequisitos
 
-- Un proyecto de **Supabase** (PostgreSQL 14+). No se necesita driver ODBC.
+- **SQL Server** (instancia Express local, p. ej. `localhost\SQLEXPRESS`, o Docker en el puerto 1433) y **SQL Server Management Studio (SSMS)**.
+- **ODBC Driver 18 for SQL Server** (el 17 también se detecta automáticamente).
 - [uv](https://docs.astral.sh/uv/) y Python 3.12+ · Node.js 22+.
 
-### Paso 1 · Base de datos (Supabase)
+### Paso 1 · Base de datos (SSMS)
 
-1. En Supabase abra **SQL Editor**.
-2. Pegue y ejecute completo `sql/001_ayni_postgres.sql` (crea el esquema `dbo`, las 11 tablas, las 6 funciones PL/pgSQL y los datos semilla).
-3. Copie la cadena de **Project Settings → Database → Connection string → Session pooler** (puerto 5432) en `DATABASE_URL`.
+Hay **un único script** de base de datos: `database/AyniOllasDB.SQL`.
 
-> La API **no** ejecuta el script al arrancar. Los usuarios semilla se insertan con `password_hash = 'PENDING_HASH'` y la API los reemplaza por hashes bcrypt al iniciar. La API se conecta como `postgres` (owner), por lo que RLS no bloquea las tablas; si se usara el rol `anon` habría que definir políticas RLS.
+1. Abra **SSMS** y conéctese a su instancia de SQL Server.
+2. Abra el archivo `database/AyniOllasDB.SQL`.
+3. Ejecútelo completo (tecla `F5` o *Execute*).
+
+> ⚠️ **Advertencia:** el script comienza con `DROP DATABASE AyniOllasDB`: re-ejecutarlo **borra todos los datos** existentes. Crea la BD, las 11 tablas normalizadas, los 6 procedimientos almacenados y los datos semilla (usuarios con `password_hash = 'PENDING_HASH'`, que la API reemplaza por hashes bcrypt al arrancar).
 
 ### Paso 2 · Backend (`http://127.0.0.1:8000`)
 
@@ -163,14 +164,17 @@ Todas las variables se leen en un solo archivo: `backend/app/core/config.py` (`p
 
 | Variable | Ejemplo | Descripción |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require` | Session pooler de Supabase. **URL-encodee** los caracteres especiales de la contraseña (`@`→`%40`, `#`→`%23`, `?`→`%3F`, `%`→`%25`, `/`→`%2F`). |
-| `DB_POOL_MIN` / `DB_POOL_MAX` / `DB_TIMEOUT` | `1` / `10` / `5` | Tamaño y timeout (s) del pool `psycopg_pool`. |
+| `DB_SERVER` | `localhost\SQLEXPRESS` o `localhost,1433` | Instancia de SQL Server (Express local o Docker). |
+| `DB_NAME` | `AyniOllasDB` | Base de datos creada por `database/AyniOllasDB.SQL`. |
+| `DB_USER` / `DB_PASSWORD` | `sa` / *(su contraseña local)* | Usuario de SQL Server (autenticación SQL). |
+| `DB_TRUSTED_CONNECTION` | `true` / `false` | `true` = autenticación de Windows (no usa `DB_USER` ni `DB_PASSWORD`). |
+| `DB_DRIVER` | `ODBC Driver 18 for SQL Server` | Driver ODBC (el 17 también se detecta automáticamente). |
+| `DB_TIMEOUT` | `5` | Segundos de espera al conectar (la API no se bloquea si SQL Server está apagado). |
 | `CORS_ORIGINS` | `http://localhost:4200,http://127.0.0.1:4200` | Orígenes permitidos separados por comas (`localhost:4200` se incluye siempre). |
 | `JWT_SECRET` | *(cadena secreta propia)* | Firma del token JWT — genérela única y privada. |
 | `JWT_ALGORITHM` | `HS256` | Algoritmo de firma JWT. |
 | `JWT_EXPIRE_MINUTES` | `480` | Vigencia de la sesión (8 horas). |
 | `API_NINJAS_KEY` | *(clave de api.ninjas.com)* | Clave para el recetario externo (`/api/recetas/externas`, traducido al español). |
-| `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | *(opcionales)* | Solo si se usan servicios REST/Storage/Auth de Supabase. |
 
 - Documentación interactiva: <http://127.0.0.1:8000/docs>
 - Estado/salud: <http://127.0.0.1:8000/api/health> · Base de datos: <http://127.0.0.1:8000/health/db> (`{"status": "ok"}` o `503`)
@@ -204,14 +208,14 @@ Se ejecuta en cada *push* a `main` / `master` / `frontend` y en cada *pull reque
 
 | Trabajo | Pasos |
 |---|---|
-| **Backend (pytest)** | checkout → instalar `uv` → `uv sync` → verificar que la API carga (`from app.main import app`) → **`uv run pytest`** |
+| **Backend (pytest)** | checkout → instalar `uv` → driver ODBC (`unixodbc-dev`) → `uv sync` → verificar que la API carga (`from app.main import app`) → **`uv run pytest`** |
 | **Frontend (ng build)** | checkout → Node.js 22 (caché npm) → `npm ci` → **`npm run build`** (typecheck + build de producción) |
 
 ---
 
 ## 7 · Usuarios de Prueba (Entorno Local)
 
-Definidos en los datos semilla de `sql/001_ayni_postgres.sql`:
+Definidos en los datos semilla de `database/AyniOllasDB.SQL`:
 
 | Correo | Rol | Olla vinculada |
 |---|---|---|
@@ -223,39 +227,21 @@ La contraseña inicial de estas cuentas se define **localmente** al arrancar la 
 
 ---
 
-## 8 · Despliegue del Backend (Render + Docker)
+## 8 · Entorno Local y Versión Desplegada
 
-El backend se publica en **Render** como *Web Service* con runtime **Docker**, construido desde `backend/Dockerfile`:
+Este repositorio es la versión **local** del proyecto: **SQL Server + SSMS**, API en `127.0.0.1:8000` y Angular en `localhost:4200`.
 
-- Imagen en dos etapas (`python:3.12-slim` + `uv sync --frozen --no-dev`), usuario sin privilegios y `uvicorn` en `0.0.0.0:$PORT` (Render inyecta `PORT`).
-- `backend/.dockerignore` excluye `.env`: los secretos se cargan como variables de entorno en Render, nunca dentro de la imagen.
-- La base de datos sigue en **Supabase** (Session pooler, puerto 5432, `sslmode=require`).
+La versión publicada en la nube vive en dos repositorios aparte, con la misma lógica de negocio adaptada a PostgreSQL:
 
-Probar la imagen en local (desde `backend/`, con Docker Desktop encendido):
-
-```powershell
-docker build -t ayni-backend .
-```
-
-```powershell
-docker run --rm -p 8001:8001 -e PORT=8001 --env-file .env ayni-backend
-```
-
-Luego verifique <http://127.0.0.1:8001/api/health> y <http://127.0.0.1:8001/health/db>.
-
-| Configuración en Render | Valor |
-|---|---|
-| Servicio | `ayni-backend` → `https://ayni-backend.onrender.com` |
-| Rama / Root Directory | `main` / `backend` |
-| Health Check Path | `/api/health` |
-| Variables | `DATABASE_URL`, `JWT_SECRET`, `JWT_ALGORITHM`, `JWT_EXPIRE_MINUTES`, `API_NINJAS_KEY`, `CORS_ORIGINS` |
-
-El paso a paso completo está en `backend/README.md`. El frontend aún no está desplegado: cuando lo esté, su `apiUrl` de producción será `https://ayni-backend.onrender.com/api` y su origen se añadirá a `CORS_ORIGINS`.
+| Repositorio | Contenido | Despliegue |
+|---|---|---|
+| `FlorDazu/Backend` | API FastAPI con **PostgreSQL en Supabase** (funciones PL/pgSQL), `Dockerfile` | Render (Docker) + GitHub Actions |
+| `FlorDazu/Frontend` | SPA Angular con `server.mjs` y `render.yaml` | Render (Node) + GitHub Actions |
 
 ---
 
 ## Documentación relacionada
 
 - `PRD.md` — documento de requisitos de producto: roles, requerimientos por módulo, inventario de endpoints, modelo de datos, reglas de negocio y criterios de aceptación E2E.
-- `backend/README.md` — endpoints por historia de usuario (HU-01…HU-14), puesta en marcha del API y despliegue en Render con Docker.
+- `backend/README.md` — endpoints por historia de usuario (HU-01…HU-14) y puesta en marcha del API con SQL Server.
 - `AGENTS.md` — convenciones del repositorio, comandos de desarrollo y flujo de base de datos.

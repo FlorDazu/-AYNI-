@@ -4,10 +4,10 @@
 |---|---|
 | **Producto** | AYNI · Ollas Comunes |
 | **Documento** | Documento de Requisitos de Producto (PRD) |
-| **Versión** | 1.1 (migración a PostgreSQL/Supabase y recetario externo en español) |
+| **Versión** | 1.1 (entorno local con SQL Server, configuración centralizada y recetario externo en español) |
 | **Estado** | Aprobado para desarrollo |
 | **Fecha** | Noviembre 2026 |
-| **Fuentes de verdad** | `backend/` (API FastAPI) · `sql/001_ayni_postgres.sql` (esquema PostgreSQL de referencia y funciones PL/pgSQL) · `frontend/` (Angular) · `.github/workflows/ci.yml` (CI) |
+| **Fuentes de verdad** | `backend/` (API FastAPI) · `database/AyniOllasDB.SQL` (esquema y SPs) · `frontend/` (Angular) · `.github/workflows/ci.yml` (CI) |
 
 > **Nota de seguridad:** este documento **no contiene contraseñas, tokens ni credenciales en texto plano**. Las cuentas de entorno local se listan únicamente con correo y rol (Anexo A); sus claves se definen solo en el equipo de desarrollo (`.env` ignorado en Git y semillas `PENDING_HASH` resueltas al arrancar la API).
 
@@ -55,15 +55,15 @@ Las **ollas comunes** del Perú son cocinas comunitarias que sostienen la alimen
         │  capas: apis/ → schemas/ → services/ → repositories/ → core/
         │  (validación Pydantic · JWT/roles · helpers SQL)
         ▼
- PostgreSQL en Supabase (esquema `dbo`, 3FN) vía Session pooler :5432 + SSL
-        │  driver `psycopg` 3 · pool `psycopg_pool` (1–10 conexiones)
-        └── Lógica de negocio en 6 funciones PL/pgSQL atómicas
+ Microsoft SQL Server (BD `AyniOllasDB`, 3FN) · administrado con SSMS
+        │  driver `pyodbc` + ODBC Driver 18/17 for SQL Server
+        └── Lógica de negocio en 6 Procedimientos Almacenados atómicos
 ```
 
 - **Frontend:** Angular 22 (standalone + signals, rutas con carga diferida), CSS propio con base **Bootstrap 5.0.2** (CDN), accesibilidad WCAG 2.1 AA.
-- **Backend:** FastAPI con `uv`; los endpoints viven en la capa `apis/` y la persistencia se ejecuta vía funciones PL/pgSQL y SQL en línea sobre `core/database.py`, que usa **`psycopg`** con un **`ConnectionPool` de `psycopg_pool`** (reemplaza a `pyodbc`/SQL Server). La conexión toma `settings.database_url` de `core/config.py` (`pydantic-settings`, lee `backend/.env`). El pool se cierra con `close_pool()` en el `lifespan` al apagar la API.
-- **Conexión:** `DATABASE_URL` apunta al **Session pooler de Supabase** (`aws-0-<region>.pooler.supabase.com:5432`, `sslmode=require`) con caracteres especiales de la contraseña URL-encodeados. El script `sql/001_ayni_postgres.sql` se aplica manualmente; la API **no** lo ejecuta al arrancar.
-- **Datos:** 11 tablas normalizadas, 6 funciones de negocio (antes SPs), función de correlativos e índices de rendimiento.
+- **Backend:** FastAPI con `uv`; los endpoints viven en la capa `apis/` y la persistencia se ejecuta vía SPs y SQL en línea sobre `core/database.py` (`pyodbc`). Toda la configuración (`DB_SERVER`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_DRIVER`, `DB_TRUSTED_CONNECTION`, JWT, CORS, API Ninjas) se lee en `core/config.py` (`pydantic-settings`, desde `backend/.env`).
+- **Entornos:** este repositorio es la versión **local** (SQL Server + SSMS). La versión desplegada en la nube vive en los repositorios `FlorDazu/Backend` (PostgreSQL en Supabase, Docker en Render) y `FlorDazu/Frontend` (Render).
+- **Datos:** 11 tablas normalizadas, 6 SPs, función de correlativos e índices de rendimiento.
 
 ---
 
@@ -201,7 +201,7 @@ Las **ollas comunes** del Perú son cocinas comunitarias que sostienen la alimen
 |---|---|---|---|
 | `GET` | `/` | Raíz de la API (mensaje de bienvenida y versión). | — |
 | `GET` | `/api/health` | Estado de la API y de la base de datos (siempre `200`, usado por el frontend). | — |
-| `GET` | `/health/db` | Comprueba `DATABASE_URL` y ejecuta `SELECT 1`: `200 {"status": "ok"}`; si falta la URL o hay `psycopg.OperationalError` → `503` con mensaje corto en español (**nunca expone la DSN**). | — |
+| `GET` | `/health/db` | Comprueba la configuración de SQL Server y ejecuta `SELECT 1`: `200 {"status": "ok"}`; si falta la configuración o falla la conexión (`pyodbc.Error`) → `503` con mensaje corto en español (sin exponer credenciales). | — |
 | `GET` | `/api/public/kpis` | Indicadores en vivo de la red. | HU-01 |
 | `GET` | `/api/public/ubigeos` | Lista de departamentos → provincias → distritos (búsqueda en cascada). | HU-02 |
 | `GET` | `/api/public/ollas` | Directorio de ollas activas con filtros geográficos. | HU-02/03 |
@@ -253,7 +253,7 @@ Las **ollas comunes** del Perú son cocinas comunitarias que sostienen la alimen
 | Formato | JSON en español · `Content-Type: application/json` (CSV en exportación). |
 | Éxito | `200` (lectura/actualización) · `201` (creación) · campo **`mensaje`** obligatorio en `POST/PUT/PATCH` (HU-13). |
 | Validación | `422` con mensajes en español (validadores centralizados). |
-| Negocio (SQL) | `RAISE EXCEPTION '… (50xxx)'`: `50001/50010` → **`409`** (duplicados) · resto de `50xxx` → **`400`** · `OperationalError`/SQLSTATE `08xxx` → **`503`** · `23505` → `409` · `23503/23502/23514` → `400`. |
+| Negocio (SQL) | `THROW 50001/50010` → **`409`** (duplicados) · resto de `50xxx` → **`400`** · fallo de conexión → **`503`** · duplicado `2627/2601` → `409` · FK/obligatorio `547/515/8152` → `400`. |
 | Autenticación | `401` (sin/expirado/inválido) · `403` (permisos) · `423` (bloqueo 5 intentos/15 min). |
 | CORS | Orígenes de `CORS_ORIGINS` en `.env`; `http://localhost:4200` se incluye siempre. |
 
@@ -261,9 +261,7 @@ Las **ollas comunes** del Perú son cocinas comunitarias que sostienen la alimen
 
 ## 5 · Modelo de datos principal
 
-Base de datos **PostgreSQL en Supabase** (esquema `dbo`), normalizada en **3FN**, definida en `sql/001_ayni_postgres.sql` (traducción del esquema original de SQL Server, ya retirado del repositorio). Booleanos `BOOLEAN`, fechas `TIMESTAMPTZ`/`DATE`.
-
-> **Seguridad a nivel de filas (RLS):** la API se conecta con el usuario **`postgres` (owner de las tablas)**, por lo que RLS no bloquea las consultas aunque esté habilitado; el aislamiento por `id_olla` lo aplica la API (`get_id_olla_contexto`). Si en el futuro se accediera con el rol **`anon`**/`authenticated` de Supabase (p. ej. desde el navegador con supabase-js), sería **obligatorio** habilitar RLS y definir políticas explícitas por tabla.
+Base de datos **`AyniOllasDB`** (SQL Server), normalizada en **3FN**, creada por `database/AyniOllasDB.SQL`.
 
 ### 5.1 Tablas (11)
 
@@ -292,9 +290,7 @@ ubigeos ──< ollas ──<┬── usuarios            (id_olla NULL = ADMIN
                      └── despachos_receta >── recetas ──< receta_ingredientes >── insumos
 ```
 
-### 5.3 Funciones de negocio PL/pgSQL (6) y función auxiliar
-
-Los routers siguen escribiendo `EXEC dbo.sp_NombreCamel @p = ?`; `core/database.py` lo traduce a `SELECT * FROM dbo.sp_nombre_snake(%s, …)` (por ejemplo `sp_RegistrarSalidaPEPS` → `sp_registrar_salida_peps`).
+### 5.3 Procedimientos almacenados (6) y función
 
 | SP / Función | Responsabilidad | HU |
 |---|---|---|
@@ -333,7 +329,7 @@ Los routers siguen escribiendo `EXEC dbo.sp_NombreCamel @p = ?`; `core/database.
 | **RN-11** | **Despacho de receta atómico**: si algún ingrediente no alcanza por PEPS, **no se despacha nada** (todo se revierte); si alcanza, se ejecutan todas las salidas y se registra el despacho. Cantidades y recetas deben ser válidas. | `sp_DespacharRecetaAtomica` · `THROW 50008/50009` → `400` |
 | **RN-12** | Las cantidades de entrada/salida deben ser **mayores a cero**. | `THROW 50003/50004` → `400` |
 | **RN-13** | **Semáforo de vencimientos**: vigente / por vencer (≤ 7 días) / vencido; los vencidos se retiran mediante descarte con motivo (no automático). | `GET /api/inventario/lotes` |
-| **RN-14** | Los errores de negocio usan `RAISE EXCEPTION '<mensaje> (50xxx)'` (antes `THROW 50xxx`) con mensaje en español y se traducen a HTTP: `50001`/`50010` → **`409`**, resto de `5xxxx` → **`400`**, fallo de conexión → **`503`**. | `traducir_error_sql` |
+| **RN-14** | Los errores de negocio usan `THROW 50xxx` con mensaje en español y se traducen a HTTP: `50001`/`50010` → **`409`**, resto de `5xxxx` → **`400`**, fallo de conexión → **`503`**. | `traducir_error_sql` |
 | **RN-15** | Toda respuesta exitosa de `POST/PUT/PATCH` incluye **`mensaje`** en español (HU-13); los errores siempre son `{"detail": "…"}`. | validadores centrales + routers |
 
 ---
@@ -348,8 +344,8 @@ Los routers siguen escribiendo `EXEC dbo.sp_NombreCamel @p = ?`; `core/database.
 | **NFR-04** | Disponibilidad | La API **arranca aunque la BD esté caída** (aviso en bitácora) y responde `503` por petición hasta recuperarse. |
 | **NFR-05** | Localización | Interfaz, validaciones y mensajes de negocio en **español**; montos en soles (PEN). |
 | **NFR-06** | Trazabilidad | Auditoría implícita en `movimientos_inventario` (autor, fecha, saldos) y en `despachos_receta`. |
-| **NFR-07** | Portabilidad | PostgreSQL 14+ en Supabase (Session pooler, SSL) o PostgreSQL local vía `DB_*`; sin drivers nativos (`psycopg[binary]`). |
-| **NFR-10** | Seguridad de datos | Conexión como owner `postgres` (RLS no aplica); con rol `anon` se requerirían políticas RLS. La DSN nunca se devuelve en respuestas ni en `/health/db`. |
+| **NFR-07** | Portabilidad | SQL Server Express local (`localhost\SQLEXPRESS`) o Docker (1433); drivers ODBC 17/18 detectados automáticamente; autenticación SQL o de Windows (`DB_TRUSTED_CONNECTION`). |
+| **NFR-10** | Seguridad de datos | Credenciales de SQL Server solo en `backend/.env` (ignorado en Git); nunca se devuelven en respuestas ni en `/health/db`. El aislamiento por olla lo aplica la API (`get_id_olla_contexto`). |
 | **NFR-11** | Observabilidad | `GET /health/db` para monitoreo de la BD; errores de traducción y de API Ninjas quedan en bitácora (`logger.warning`). |
 | **NFR-08** | Calidad | Pruebas automatizadas (`pytest`) y compilación del frontend (`ng build`) ejecutadas en **GitHub Actions** en cada push/PR. |
 | **NFR-09** | Documentación | OpenAPI en `/docs`; `README.md` y `PRD.md` **sin credenciales en texto plano**. |
@@ -358,7 +354,7 @@ Los routers siguen escribiendo `EXEC dbo.sp_NombreCamel @p = ?`; `core/database.
 
 ## 8 · Criterios de aceptación para pruebas E2E
 
-> Formato: **Dado** (contexto) / **Cuando** (acción) / **Entonces** (resultado verificable). Cubren el camino crítico de extremo a extremo: Angular → FastAPI → PostgreSQL (Supabase).
+> Formato: **Dado** (contexto) / **Cuando** (acción) / **Entonces** (resultado verificable). Cubren el camino crítico de extremo a extremo: Angular → FastAPI → SQL Server.
 
 | ID | Escenario | Dado | Cuando | Entonces |
 |---|---|---|---|---|
@@ -378,8 +374,8 @@ Los routers siguen escribiendo `EXEC dbo.sp_NombreCamel @p = ?`; `core/database.
 | **CEN-14** | Permisos de ADMIN | Una DIRIGENTA y un ADMIN autenticados | La DIRIGENTA llama a `/api/admin/*` y el ADMIN lista y cambia el estado de una olla | DIRIGENTA → `403` «Solo el administrador…»; ADMIN → `200` con `mensaje` y la olla queda desactivada/activada (visible en el portal) |
 | **CEN-15** | Gestión de usuarios | Cuenta bloqueada por intentos | El ADMIN aplica `PATCH /api/admin/usuarios/{id}` con desbloqueo/activación | `200` con `mensaje`; la cuenta puede volver a autenticarse y su contador de intentos queda en 0 |
 | **CEN-16** | Frontend E2E | Angular compilado (`npm run build` sin errores) | Navegar sin sesión a una ruta protegida, iniciar sesión como DIRIGENTA y como ADMIN | Las rutas protegidas redirigen a `/login`; tras el login se entra al panel según el rol; el portal público muestra KPIs y directorio; **todo `POST/PUT/PATCH` exitoso muestra un `mensaje` en español** |
-| **CEN-17** | Resiliencia | API desplegada con PostgreSQL inaccesible | Se consulta `GET /api/health` y cualquier endpoint con datos | `503` con `detail` en español (la API no se cae); al restablecer la BD, las peticiones responden `200` sin reiniciar |
-| **CEN-18** | Salud de la BD | API en `:8000` con `DATABASE_URL` válida | Se consulta `GET /health/db` | `200` `{"status": "ok"}`; sin `DATABASE_URL` o con BD inaccesible → `503` con mensaje corto en español y **sin la cadena de conexión** |
+| **CEN-17** | Resiliencia | API desplegada con SQL Server detenido | Se consulta `GET /api/health` y cualquier endpoint con datos | `503` con `detail` en español (la API no se cae); al restablecer la BD, las peticiones responden `200` sin reiniciar |
+| **CEN-18** | Salud de la BD | API en `:8000` con SQL Server configurado en `.env` | Se consulta `GET /health/db` | `200` `{"status": "ok"}`; con SQL Server detenido o mal configurado → `503` con mensaje corto en español y **sin credenciales** |
 | **CEN-19** | Recetario externo en español | DIRIGENTA autenticada y `API_NINJAS_KEY` configurada | Se busca «lentejas» en la vista *recetas* (`GET /api/recetas/externas?q=lentejas`) | `200`; `consulta_en` en inglés; título, porciones («N porciones»), ingredientes (viñetas) y pasos (numerados) en español; una segunda búsqueda igual responde desde caché. Sin clave → recetas locales con `aviso` |
 
 ---
@@ -390,15 +386,15 @@ Los routers siguen escribiendo `EXEC dbo.sp_NombreCamel @p = ?`; `core/database.
 |---|---|---|---|
 | Unitarias/Integration API | `pytest` + `httpx` (`TestClient`) | `uv run pytest` (desde `backend/`) | 10 pruebas: `/docs`, rutas OpenAPI, salud, validación `422` en español, `401`, `403`, `404` — **no requieren base de datos** (doble de conexión en `tests/conftest.py`). |
 | Build frontend | Angular CLI | `npm run build` (desde `frontend/`) | Typecheck TypeScript + build de producción (bundle inicial ≈ 315 kB). |
-| CI | GitHub Actions (`.github/workflows/ci.yml`) | push a `main`/`master`/`frontend` y pull requests | Dos trabajos paralelos: **Backend** (uv → `uv sync` → carga de la app → `pytest`) y **Frontend** (Node 22 → `npm ci` → `ng build`). |
+| CI | GitHub Actions (`.github/workflows/ci.yml`) | push a `main`/`master`/`frontend` y pull requests | Dos trabajos paralelos: **Backend** (uv → ODBC (`unixodbc-dev`) → `uv sync` → carga de la app → `pytest`) y **Frontend** (Node 22 → `npm ci` → `ng build`). |
 
-**Pruebas E2E manuales:** usar la matriz de la sección 8 contra un entorno local (Supabase + API en `:8000` + Angular en `:4200`), apoyándose en `/docs` para la capa HTTP y en las vistas de `frontend/` para la capa de usuario.
+**Pruebas E2E manuales:** usar la matriz de la sección 8 contra un entorno local (SQL Server + API en `:8000` + Angular en `:4200`), apoyándose en `/docs` para la capa HTTP y en las vistas de `frontend/` para la capa de usuario.
 
 ---
 
 ## Anexo A · Usuarios semilla (entorno local)
 
-Definidos en `sql/001_ayni_postgres.sql` (solo correo y rol; **las contraseñas no están en este documento** — se generan localmente al arrancar la API y se documentan en `backend/README.md` para desarrollo local):
+Definidos en `database/AyniOllasDB.SQL` (solo correo y rol; **las contraseñas no están en este documento** — se generan localmente al arrancar la API y se documentan en `backend/README.md` para desarrollo local):
 
 | Correo | Rol | Olla vinculada |
 |---|---|---|
@@ -416,9 +412,8 @@ Definidos en `sql/001_ayni_postgres.sql` (solo correo y rol; **las contraseñas 
 | **Kardex** | Registro cronológico de movimientos de inventario con saldos. |
 | **Lote** | Conjunto de un insumo ingresado en una fecha (con vencimiento opcional). |
 | **Ración** | Porción servida; base del cálculo proporcional de recetas. |
-| **SP** | Procedimiento almacenado; en PostgreSQL se implementa como función PL/pgSQL (`dbo.sp_*`). |
-| **Session pooler** | Pooler de Supabase en el puerto 5432 que mantiene una sesión por conexión. |
-| **RLS** | *Row Level Security*: políticas de PostgreSQL que filtran filas por rol. |
+| **SP** | Procedimiento almacenado de SQL Server. |
+| **SSMS** | SQL Server Management Studio: herramienta para administrar la base de datos local. |
 | **HU** | Historia de usuario (HU-01 … HU-14). |
 | **JWT** | Token firmado (HS256) usado en la sesión de 8 horas. |
 | **WCAG** | Pautas de accesibilidad web (2.1 AA en AYNI). |

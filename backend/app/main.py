@@ -8,7 +8,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
-import psycopg
+import pyodbc
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +17,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.apis import admin, auth, donaciones, inventario, olla, public, recetas, reportes
 from app.core.config import settings
-from app.core.database import close_pool, consultar, consultar_uno, ejecutar, obtener_conexion, traducir_error_sql
+from app.core.database import consultar, consultar_uno, ejecutar, obtener_conexion, traducir_error_sql
 from app.core.security import hash_password
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
@@ -48,7 +48,7 @@ def actualizar_hashes_pendientes() -> None:
             )
             logger.info("Contraseña semilla inicializada para %s", username)
         if not pendientes:
-            logger.info("Conexión a PostgreSQL correcta. No hay contraseñas pendientes por inicializar.")
+            logger.info("Conexión a SQL Server correcta. No hay contraseñas pendientes por inicializar.")
     finally:
         conn.close()
 
@@ -61,12 +61,11 @@ async def lifespan(_: FastAPI):
         actualizar_hashes_pendientes()
     except Exception as exc:  # noqa: BLE001 - la API debe arrancar aunque la BD no esté lista
         logger.warning(
-            "No se pudieron inicializar las contraseñas semilla (PostgreSQL no disponible o script pendiente). "
+            "No se pudieron inicializar las contraseñas semilla (SQL Server no disponible o script pendiente). "
             "La API seguirá funcionando. Detalle: %s",
             exc,
         )
     yield
-    close_pool()
 
 
 app = FastAPI(
@@ -180,8 +179,8 @@ async def manejar_http(_: Request, exc: StarletteHTTPException) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"detail": detalle}, headers=getattr(exc, "headers", None))
 
 
-@app.exception_handler(psycopg.Error)
-async def manejar_psycopg(_: Request, exc: psycopg.Error) -> JSONResponse:
+@app.exception_handler(pyodbc.Error)
+async def manejar_pyodbc(_: Request, exc: pyodbc.Error) -> JSONResponse:
     http_exc = traducir_error_sql(exc)
     return JSONResponse(status_code=http_exc.status_code, content={"detail": http_exc.detail})
 
@@ -223,18 +222,18 @@ def health() -> dict[str, Any]:
         finally:
             conn.close()
         return {"api": "ok", "base_datos": "ok"}
-    except psycopg.Error as exc:
+    except pyodbc.Error as exc:
         return {"api": "ok", "base_datos": "sin conexión", "detalle": traducir_error_sql(exc).detail}
     except Exception as exc:
         return {"api": "ok", "base_datos": "sin conexión", "detalle": str(exc)}
 
 
-@app.get("/health/db", tags=["Sistema"], summary="Comprobación de salud de la base de datos PostgreSQL")
+@app.get("/health/db", tags=["Sistema"], summary="Comprobación de salud de la base de datos SQL Server")
 def health_db() -> dict[str, str]:
-    if not settings.database_url:
+    if not settings.db_configurada:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="DATABASE_URL no configurada en las variables de entorno.",
+            detail="La conexión a SQL Server no está configurada (DB_SERVER, DB_NAME, DB_USER).",
         )
     try:
         conn = obtener_conexion()
@@ -243,10 +242,10 @@ def health_db() -> dict[str, str]:
         finally:
             conn.close()
         return {"status": "ok"}
-    except psycopg.OperationalError:
+    except pyodbc.Error:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No se pudo establecer conexión con PostgreSQL.",
+            detail="No se pudo establecer conexión con SQL Server.",
         )
     except Exception as exc:
         logger.warning("Error en comprobación /health/db: %s", exc)

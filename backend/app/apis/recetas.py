@@ -8,7 +8,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 import httpx
-import psycopg
+import pyodbc
 from deep_translator import GoogleTranslator
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -34,7 +34,7 @@ LEFT JOIN (
     SELECT id_insumo, SUM(cantidad_disponible) AS stock_vigente
     FROM dbo.lotes_inventario
     WHERE id_olla = ? AND estado = 'ACTIVO'
-      AND (fecha_vencimiento IS NULL OR fecha_vencimiento >= CURRENT_DATE)
+      AND (fecha_vencimiento IS NULL OR fecha_vencimiento >= CAST(GETDATE() AS DATE))
     GROUP BY id_insumo
 ) s ON s.id_insumo = ri.id_insumo
 WHERE r.activa = 1
@@ -94,7 +94,7 @@ def _armar_recetas(filas: list[dict[str, Any]], raciones: int | None) -> list[di
 def listar_recetas(
     raciones: int | None = Query(default=None, gt=0, le=10000, description="Raciones a preparar (por defecto: raciones base)"),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     filas = consultar(conn, SQL_RECETAS + " ORDER BY r.id_receta, i.nombre", id_olla)
     return _armar_recetas(filas, raciones)
@@ -105,7 +105,7 @@ def despachar(
     datos: DespacharReceta,
     usuario: dict = Depends(get_usuario_actual),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     filas = consultar(conn, SQL_RECETAS + " AND r.id_receta = ? ORDER BY i.nombre", id_olla, datos.id_receta)
     if not filas:

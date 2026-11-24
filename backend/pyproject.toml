@@ -1,7 +1,7 @@
 [project]
 name = "ayni-backend"
 version = "0.1.0"
-description = "API REST de AYNI - Gestión de Ollas Comunes (FastAPI + PostgreSQL)"
+description = "API REST de AYNI - Gestión de Ollas Comunes (FastAPI + SQL Server)"
 readme = "README.md"
 authors = [
     { name = "FlorDazu" }
@@ -14,13 +14,12 @@ dependencies = [
     "fastapi>=0.165.0",
     "httpx>=0.28.1",
     "passlib[bcrypt]>=1.7.4",
-    "psycopg[binary]>=3.2",
-    "psycopg-pool>=3.2",
     "pydantic>=2.14.4",
     "python-dotenv>=1.2.4",
     "python-jose[cryptography]>=3.5.0",
     "uvicorn>=0.54.0",
     "pydantic-settings>=2.6",
+    "pyodbc>=5.2",
 ]
 
 [dependency-groups]

@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-import psycopg
+import pyodbc
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.database import consultar, consultar_uno, ejecutar_sp, get_db
@@ -15,12 +15,12 @@ DIAS_POR_VENCER = 7
 
 SQL_STOCK = """
 SELECT i.id_insumo, i.nombre, i.categoria, i.unidad_base, i.requiere_vencimiento, i.stock_minimo,
-       ISNULL(SUM(CASE WHEN l.fecha_vencimiento IS NULL OR l.fecha_vencimiento >= CURRENT_DATE
+       ISNULL(SUM(CASE WHEN l.fecha_vencimiento IS NULL OR l.fecha_vencimiento >= CAST(GETDATE() AS DATE)
                        THEN l.cantidad_disponible END), 0) AS stock_actual,
-       ISNULL(SUM(CASE WHEN l.fecha_vencimiento < CURRENT_DATE
+       ISNULL(SUM(CASE WHEN l.fecha_vencimiento < CAST(GETDATE() AS DATE)
                        THEN l.cantidad_disponible END), 0) AS stock_vencido,
        COUNT(l.id_lote) AS lotes_activos,
-       MIN(CASE WHEN l.fecha_vencimiento >= CURRENT_DATE THEN l.fecha_vencimiento END) AS proximo_vencimiento
+       MIN(CASE WHEN l.fecha_vencimiento >= CAST(GETDATE() AS DATE) THEN l.fecha_vencimiento END) AS proximo_vencimiento
 FROM dbo.insumos i
 LEFT JOIN dbo.lotes_inventario l
        ON l.id_insumo = i.id_insumo AND l.id_olla = ? AND l.estado = 'ACTIVO' AND l.cantidad_disponible > 0
@@ -32,11 +32,11 @@ SQL_LOTES = f"""
 SELECT * FROM (
     SELECT l.id_lote, l.codigo_lote, l.id_insumo, i.nombre AS insumo, i.categoria, i.unidad_base,
            l.id_donacion, l.cantidad_inicial, l.cantidad_disponible, l.fecha_ingreso, l.fecha_vencimiento, l.estado,
-           (l.fecha_vencimiento - CURRENT_DATE) AS dias_para_vencer,
+           DATEDIFF(DAY, CAST(GETDATE() AS DATE), l.fecha_vencimiento) AS dias_para_vencer,
            CASE
                WHEN l.fecha_vencimiento IS NULL THEN 'VIGENTE'
-               WHEN l.fecha_vencimiento < CURRENT_DATE THEN 'VENCIDO'
-               WHEN (l.fecha_vencimiento - CURRENT_DATE) <= {DIAS_POR_VENCER} THEN 'POR_VENCER'
+               WHEN l.fecha_vencimiento < CAST(GETDATE() AS DATE) THEN 'VENCIDO'
+               WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), l.fecha_vencimiento) <= {DIAS_POR_VENCER} THEN 'POR_VENCER'
                ELSE 'VIGENTE'
            END AS semaforo
     FROM dbo.lotes_inventario l
@@ -50,7 +50,7 @@ WHERE 1 = 1
 @router.get("/insumos", summary="Catálogo de insumos")
 def listar_insumos(
     categoria: str | None = Query(default=None, max_length=60),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
     _: dict = Depends(get_usuario_actual),
 ):
     sql = "SELECT id_insumo, nombre, categoria, unidad_base, requiere_vencimiento, stock_minimo FROM dbo.insumos"
@@ -65,7 +65,7 @@ def listar_insumos(
 def stock(
     solo_alertas: bool = Query(default=False, description="true = solo insumos con stock bajo"),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     filas = consultar(conn, SQL_STOCK, id_olla)
     for fila in filas:
@@ -89,7 +89,7 @@ def lotes(
     semaforo: Literal["VIGENTE", "POR_VENCER", "VENCIDO"] | None = Query(default=None),
     id_insumo: int | None = Query(default=None, gt=0),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     sql, params = SQL_LOTES, [id_olla]
     if estado != "TODOS":
@@ -111,7 +111,7 @@ def entrada(
     datos: EntradaInventario,
     usuario: dict = Depends(get_usuario_actual),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     insumo = consultar_uno(
         conn, "SELECT nombre, unidad_base, requiere_vencimiento FROM dbo.insumos WHERE id_insumo = ?", datos.id_insumo
@@ -147,7 +147,7 @@ def salida(
     datos: SalidaInventario,
     usuario: dict = Depends(get_usuario_actual),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     insumo = consultar_uno(conn, "SELECT nombre, unidad_base FROM dbo.insumos WHERE id_insumo = ?", datos.id_insumo)
     if insumo is None:
@@ -189,7 +189,7 @@ def descartar(
     datos: DescarteLote,
     usuario: dict = Depends(get_usuario_actual),
     id_olla: int = Depends(get_id_olla_contexto),
-    conn: psycopg.Connection = Depends(get_db),
+    conn: pyodbc.Connection = Depends(get_db),
 ):
     if not datos.motivo.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debe indicar el motivo del descarte.")
