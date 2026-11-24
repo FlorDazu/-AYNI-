@@ -31,6 +31,9 @@ npm run build   # typecheck + production build (ng build)
 
 ## Database workflow (critical) — SQL Server
 
+- Units: each `insumos` row has ONE `unidad_base` (`kg`, `L`, `unidades`) and every lot/kardex/recipe amount is stored in it. The frontend (`src/app/core/unidades.ts`) lets users type g/sacos, ml/botellas/galoneras or docenas/cajas and converts to the base unit (rounded to 2 decimals) before calling the API. Never store a per-entry unit: PEPS sums lots of the same insumo.
+- `database/003_insumos_adicionales.sql` adds 12 insumos (idempotent by `nombre`); PostgreSQL twin in `FlorDazu/Backend/sql/`.
+- `database/002_regiones_y_recetas.sql` is an **incremental, idempotent** data script (162 ubigeos across 25 regions — Junín/Huancayo 28 districts, Lima 43 — plus 6 recipes); run it after `AyniOllasDB.SQL`. Its PostgreSQL twin is `sql/002_regiones_y_recetas.sql` in `FlorDazu/Backend` (Supabase SQL Editor; no redeploy needed for data).
 - **All schema lives in `database/AyniOllasDB.SQL`, and the script begins by DROPing the entire `AyniOllasDB` database.** Re-running it wipes all data. There is no migration tool (no Alembic): a schema change means editing this script and accepting a full reset (seed `PENDING_HASH` users come back too).
 - Business logic lives in stored procedures: `sp_RegistrarOlla`, `sp_CrearCuentaDirigenta`, `sp_RegistrarEntradaInventario`, `sp_RegistrarSalidaPEPS` (PEPS/FIFO), `sp_DescartarLote`, `sp_DespacharRecetaAtomica`. Writes in routers go through `EXEC dbo.sp_...`; reads are inline T-SQL (`ISNULL`, `GETDATE()`, `DATEDIFF`, `TOP`).
 - SPs signal business errors with `THROW 50xxx, '<mensaje en español>', 1`. `app/core/database.py::traducir_error_sql` maps **50001/50010 → 409**, other `5xxxx → 400`, connection failures → 503, duplicates (2627/2601) → 409, FK/CHECK/length (547/515/8152) → 400, and passes the THROW text through as `detail`. New business errors should follow this pattern.
@@ -40,6 +43,7 @@ npm run build   # typecheck + production build (ng build)
 
 ### Recetario externo (API Ninjas, HU-12)
 
+- Translation uses a provider chain in `recetas.py::traducir_lista`: Google Cloud Translation API (only if `GOOGLE_TRANSLATE_API_KEY`) → free Google (deep-translator; often `TooManyRequests`, then skipped for 10 min) → MyMemory (≤ 450 chars per request) → English. All texts of all recipes go in one batch; a failing field never drops the others; `servings` always uses the regex. Only fully translated searches are cached (`traducido: true`).
 - `GET /api/recetas/externas?q=...`: the Spanish query is translated to English with `deep_translator.GoogleTranslator(source="es", target="en")` (local dictionary fallback), sent to API Ninjas `/v3/recipe`, and the results are translated back `en → es`: `title`, `servings` (`"1 Servings"` → `"1 porción"`, deterministic regex before Google), `ingredients` (`list[str]`, bullets) and `pasos`/`instructions` (`list[str]`, numbered steps). Lists are translated in one call joined by `
 `, falling back to item-by-item if the line count changes.
 - Successful responses are cached in memory per query (`strip().lower()`, accents removed; max 100). Any translation exception is logged (`logger.warning`) and the recipe is returned in English. Without `API_NINJAS_KEY` or on network failure, local Spanish recipes are returned with an `aviso`.

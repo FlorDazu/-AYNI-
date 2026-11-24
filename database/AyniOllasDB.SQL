@@ -820,6 +820,335 @@ INSERT INTO dbo.receta_ingredientes (id_receta, id_insumo, cantidad_base) VALUES
 (3, 3, 0.70); -- 0.7 L Aceite
 GO
 
+SET NOCOUNT ON;
+
+INSERT INTO dbo.insumos (nombre, categoria, unidad_base, requiere_vencimiento, stock_minimo)
+SELECT v.nombre, v.categoria, v.unidad_base, v.requiere_vencimiento, v.stock_minimo
+FROM (VALUES
+    (N'Azúcar Rubia', N'Abarrotes', 'kg', 1, 5.00),
+    (N'Sal de Cocina', N'Aceites y Condimentos', 'kg', 0, 2.00),
+    (N'Ajo', N'Aceites y Condimentos', 'kg', 0, 0.50),
+    (N'Harina de Trigo', N'Granos y Cereales', 'kg', 1, 5.00),
+    (N'Avena en Hojuelas', N'Granos y Cereales', 'kg', 1, 5.00),
+    (N'Quinua', N'Granos y Cereales', 'kg', 1, 5.00),
+    (N'Frejol Canario', N'Menestras', 'kg', 1, 8.00),
+    (N'Cebolla Roja', N'Tubérculos y Verduras', 'kg', 0, 5.00),
+    (N'Zanahoria', N'Tubérculos y Verduras', 'kg', 0, 4.00),
+    (N'Pescado Bonito', N'Proteínas', 'kg', 1, 5.00),
+    (N'Huevos', N'Proteínas', 'unidades', 1, 60.00),
+    (N'Leche Fresca', N'Lácteos', 'L', 1, 10.00)
+) AS v(nombre, categoria, unidad_base, requiere_vencimiento, stock_minimo)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.insumos i WHERE i.nombre = v.nombre);
+GO
+-- ============================================================================
+-- AYNI · 002 · Regiones del Perú y recetas adicionales (SQL Server)
+-- Ejecutar en SSMS DESPUÉS de database/AyniOllasDB.SQL.
+-- Es INCREMENTAL e IDEMPOTENTE: no borra nada y se puede ejecutar varias veces
+-- (solo inserta lo que falta). Los id_ubigeo existentes no cambian.
+-- 162 ubigeos: 24 departamentos + Callao; foco en Junín (Huancayo con
+-- sus 28 distritos) y Lima (43 distritos de Lima Metropolitana).
+-- ============================================================================
+
+
+SET NOCOUNT ON;
+
+-- 1) Ubigeos ------------------------------------------------------------------
+INSERT INTO dbo.ubigeos (departamento, provincia, distrito)
+SELECT v.departamento, v.provincia, v.distrito
+FROM (VALUES
+    (N'Junín', N'Huancayo', N'Huancayo'),
+    (N'Junín', N'Huancayo', N'El Tambo'),
+    (N'Junín', N'Huancayo', N'Chilca'),
+    (N'Junín', N'Huancayo', N'Carhuacallanga'),
+    (N'Junín', N'Huancayo', N'Chacapampa'),
+    (N'Junín', N'Huancayo', N'Chicche'),
+    (N'Junín', N'Huancayo', N'Chongos Alto'),
+    (N'Junín', N'Huancayo', N'Chupuro'),
+    (N'Junín', N'Huancayo', N'Colca'),
+    (N'Junín', N'Huancayo', N'Cullhuas'),
+    (N'Junín', N'Huancayo', N'Huacrapuquio'),
+    (N'Junín', N'Huancayo', N'Hualhuas'),
+    (N'Junín', N'Huancayo', N'Huancán'),
+    (N'Junín', N'Huancayo', N'Huasicancha'),
+    (N'Junín', N'Huancayo', N'Huayucachi'),
+    (N'Junín', N'Huancayo', N'Ingenio'),
+    (N'Junín', N'Huancayo', N'Pariahuanca'),
+    (N'Junín', N'Huancayo', N'Pilcomayo'),
+    (N'Junín', N'Huancayo', N'Pucará'),
+    (N'Junín', N'Huancayo', N'Quichuay'),
+    (N'Junín', N'Huancayo', N'Quilcas'),
+    (N'Junín', N'Huancayo', N'San Agustín'),
+    (N'Junín', N'Huancayo', N'San Jerónimo de Tunán'),
+    (N'Junín', N'Huancayo', N'Saño'),
+    (N'Junín', N'Huancayo', N'Sapallanga'),
+    (N'Junín', N'Huancayo', N'Sicaya'),
+    (N'Junín', N'Huancayo', N'Santo Domingo de Acobamba'),
+    (N'Junín', N'Huancayo', N'Viques'),
+    (N'Junín', N'Concepción', N'Concepción'),
+    (N'Junín', N'Chupaca', N'Chupaca'),
+    (N'Junín', N'Jauja', N'Jauja'),
+    (N'Junín', N'Tarma', N'Tarma'),
+    (N'Junín', N'Yauli', N'La Oroya'),
+    (N'Junín', N'Chanchamayo', N'Chanchamayo'),
+    (N'Junín', N'Chanchamayo', N'Perené'),
+    (N'Junín', N'Satipo', N'Satipo'),
+    (N'Junín', N'Junín', N'Junín'),
+    (N'Lima', N'Lima', N'Lima'),
+    (N'Lima', N'Lima', N'Ancón'),
+    (N'Lima', N'Lima', N'Ate'),
+    (N'Lima', N'Lima', N'Barranco'),
+    (N'Lima', N'Lima', N'Breña'),
+    (N'Lima', N'Lima', N'Carabayllo'),
+    (N'Lima', N'Lima', N'Chaclacayo'),
+    (N'Lima', N'Lima', N'Chorrillos'),
+    (N'Lima', N'Lima', N'Cieneguilla'),
+    (N'Lima', N'Lima', N'Comas'),
+    (N'Lima', N'Lima', N'El Agustino'),
+    (N'Lima', N'Lima', N'Independencia'),
+    (N'Lima', N'Lima', N'Jesús María'),
+    (N'Lima', N'Lima', N'La Molina'),
+    (N'Lima', N'Lima', N'La Victoria'),
+    (N'Lima', N'Lima', N'Lince'),
+    (N'Lima', N'Lima', N'Los Olivos'),
+    (N'Lima', N'Lima', N'Lurigancho'),
+    (N'Lima', N'Lima', N'Lurín'),
+    (N'Lima', N'Lima', N'Magdalena del Mar'),
+    (N'Lima', N'Lima', N'Miraflores'),
+    (N'Lima', N'Lima', N'Pachacámac'),
+    (N'Lima', N'Lima', N'Pucusana'),
+    (N'Lima', N'Lima', N'Pueblo Libre'),
+    (N'Lima', N'Lima', N'Puente Piedra'),
+    (N'Lima', N'Lima', N'Punta Hermosa'),
+    (N'Lima', N'Lima', N'Punta Negra'),
+    (N'Lima', N'Lima', N'Rímac'),
+    (N'Lima', N'Lima', N'San Bartolo'),
+    (N'Lima', N'Lima', N'San Borja'),
+    (N'Lima', N'Lima', N'San Isidro'),
+    (N'Lima', N'Lima', N'San Juan de Lurigancho'),
+    (N'Lima', N'Lima', N'San Juan de Miraflores'),
+    (N'Lima', N'Lima', N'San Luis'),
+    (N'Lima', N'Lima', N'San Martín de Porres'),
+    (N'Lima', N'Lima', N'San Miguel'),
+    (N'Lima', N'Lima', N'Santa Anita'),
+    (N'Lima', N'Lima', N'Santa María del Mar'),
+    (N'Lima', N'Lima', N'Santa Rosa'),
+    (N'Lima', N'Lima', N'Santiago de Surco'),
+    (N'Lima', N'Lima', N'Surquillo'),
+    (N'Lima', N'Lima', N'Villa El Salvador'),
+    (N'Lima', N'Lima', N'Villa María del Triunfo'),
+    (N'Lima', N'Barranca', N'Barranca'),
+    (N'Lima', N'Cañete', N'San Vicente de Cañete'),
+    (N'Lima', N'Huaral', N'Huaral'),
+    (N'Lima', N'Huaura', N'Huacho'),
+    (N'Lima', N'Huarochirí', N'Matucana'),
+    (N'Callao', N'Callao', N'Callao'),
+    (N'Callao', N'Callao', N'Bellavista'),
+    (N'Callao', N'Callao', N'Carmen de la Legua Reynoso'),
+    (N'Callao', N'Callao', N'La Perla'),
+    (N'Callao', N'Callao', N'La Punta'),
+    (N'Callao', N'Callao', N'Ventanilla'),
+    (N'Callao', N'Callao', N'Mi Perú'),
+    (N'Amazonas', N'Chachapoyas', N'Chachapoyas'),
+    (N'Amazonas', N'Bagua', N'Bagua'),
+    (N'Áncash', N'Huaraz', N'Huaraz'),
+    (N'Áncash', N'Huaraz', N'Independencia'),
+    (N'Áncash', N'Santa', N'Chimbote'),
+    (N'Áncash', N'Santa', N'Nuevo Chimbote'),
+    (N'Apurímac', N'Abancay', N'Abancay'),
+    (N'Apurímac', N'Andahuaylas', N'Andahuaylas'),
+    (N'Arequipa', N'Arequipa', N'Arequipa'),
+    (N'Arequipa', N'Arequipa', N'Cerro Colorado'),
+    (N'Arequipa', N'Arequipa', N'Paucarpata'),
+    (N'Arequipa', N'Arequipa', N'Cayma'),
+    (N'Arequipa', N'Arequipa', N'José Luis Bustamante y Rivero'),
+    (N'Arequipa', N'Islay', N'Mollendo'),
+    (N'Ayacucho', N'Huamanga', N'Ayacucho'),
+    (N'Ayacucho', N'Huamanga', N'San Juan Bautista'),
+    (N'Ayacucho', N'Huamanga', N'Carmen Alto'),
+    (N'Ayacucho', N'Huanta', N'Huanta'),
+    (N'Cajamarca', N'Cajamarca', N'Cajamarca'),
+    (N'Cajamarca', N'Cajamarca', N'Baños del Inca'),
+    (N'Cajamarca', N'Jaén', N'Jaén'),
+    (N'Cusco', N'Cusco', N'Cusco'),
+    (N'Cusco', N'Cusco', N'Santiago'),
+    (N'Cusco', N'Cusco', N'Wanchaq'),
+    (N'Cusco', N'Cusco', N'San Sebastián'),
+    (N'Cusco', N'Cusco', N'San Jerónimo'),
+    (N'Cusco', N'La Convención', N'Santa Ana'),
+    (N'Huancavelica', N'Huancavelica', N'Huancavelica'),
+    (N'Huánuco', N'Huánuco', N'Huánuco'),
+    (N'Huánuco', N'Huánuco', N'Amarilis'),
+    (N'Huánuco', N'Huánuco', N'Pillco Marca'),
+    (N'Huánuco', N'Leoncio Prado', N'Rupa-Rupa'),
+    (N'Ica', N'Ica', N'Ica'),
+    (N'Ica', N'Ica', N'Parcona'),
+    (N'Ica', N'Chincha', N'Chincha Alta'),
+    (N'Ica', N'Pisco', N'Pisco'),
+    (N'La Libertad', N'Trujillo', N'Trujillo'),
+    (N'La Libertad', N'Trujillo', N'La Esperanza'),
+    (N'La Libertad', N'Trujillo', N'El Porvenir'),
+    (N'La Libertad', N'Trujillo', N'Víctor Larco Herrera'),
+    (N'Lambayeque', N'Chiclayo', N'Chiclayo'),
+    (N'Lambayeque', N'Chiclayo', N'José Leonardo Ortiz'),
+    (N'Lambayeque', N'Chiclayo', N'La Victoria'),
+    (N'Lambayeque', N'Lambayeque', N'Lambayeque'),
+    (N'Loreto', N'Maynas', N'Iquitos'),
+    (N'Loreto', N'Maynas', N'Punchana'),
+    (N'Loreto', N'Maynas', N'Belén'),
+    (N'Loreto', N'Maynas', N'San Juan Bautista'),
+    (N'Madre de Dios', N'Tambopata', N'Tambopata'),
+    (N'Moquegua', N'Mariscal Nieto', N'Moquegua'),
+    (N'Moquegua', N'Ilo', N'Ilo'),
+    (N'Pasco', N'Pasco', N'Chaupimarca'),
+    (N'Pasco', N'Pasco', N'Yanacancha'),
+    (N'Piura', N'Piura', N'Piura'),
+    (N'Piura', N'Piura', N'Castilla'),
+    (N'Piura', N'Piura', N'Veintiséis de Octubre'),
+    (N'Piura', N'Sullana', N'Sullana'),
+    (N'Puno', N'Puno', N'Puno'),
+    (N'Puno', N'San Román', N'Juliaca'),
+    (N'San Martín', N'Moyobamba', N'Moyobamba'),
+    (N'San Martín', N'San Martín', N'Tarapoto'),
+    (N'San Martín', N'San Martín', N'Morales'),
+    (N'Tacna', N'Tacna', N'Tacna'),
+    (N'Tacna', N'Tacna', N'Alto de la Alianza'),
+    (N'Tacna', N'Tacna', N'Ciudad Nueva'),
+    (N'Tacna', N'Tacna', N'Gregorio Albarracín Lanchipa'),
+    (N'Tumbes', N'Tumbes', N'Tumbes'),
+    (N'Ucayali', N'Coronel Portillo', N'Callería'),
+    (N'Ucayali', N'Coronel Portillo', N'Yarinacocha'),
+    (N'Ucayali', N'Coronel Portillo', N'Manantay')
+) AS v(departamento, provincia, distrito)
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.ubigeos u
+    WHERE u.departamento = v.departamento AND u.provincia = v.provincia AND u.distrito = v.distrito
+);
+GO
+
+-- 2) Recetas (50 raciones base) -------------------------------------------------
+IF NOT EXISTS (SELECT 1 FROM dbo.recetas WHERE nombre = N'Tallarines con Pollo')
+    INSERT INTO dbo.recetas (nombre, descripcion, raciones_base, activa)
+    VALUES (N'Tallarines con Pollo', N'Fideos guisados con presa de pollo, rendidores y del gusto de los niños.', 50, 1);
+
+INSERT INTO dbo.receta_ingredientes (id_receta, id_insumo, cantidad_base)
+SELECT r.id_receta, i.id_insumo, v.cantidad
+FROM (VALUES
+    (N'Fideo Tallarín', 5.00),
+    (N'Filete de Pollo', 6.50),
+    (N'Aceite Vegetal', 0.70),
+    (N'Papa Blanca', 3.00)
+) AS v(insumo, cantidad)
+JOIN dbo.insumos i ON i.nombre = v.insumo
+JOIN dbo.recetas r ON r.nombre = N'Tallarines con Pollo'
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.receta_ingredientes ri WHERE ri.id_receta = r.id_receta AND ri.id_insumo = i.id_insumo
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.recetas WHERE nombre = N'Sopa de Fideos con Pollo')
+    INSERT INTO dbo.recetas (nombre, descripcion, raciones_base, activa)
+    VALUES (N'Sopa de Fideos con Pollo', N'Sopa caliente y nutritiva, ideal para los días fríos de la sierra.', 50, 1);
+
+INSERT INTO dbo.receta_ingredientes (id_receta, id_insumo, cantidad_base)
+SELECT r.id_receta, i.id_insumo, v.cantidad
+FROM (VALUES
+    (N'Fideo Tallarín', 3.00),
+    (N'Filete de Pollo', 4.00),
+    (N'Papa Blanca', 5.00),
+    (N'Aceite Vegetal', 0.30)
+) AS v(insumo, cantidad)
+JOIN dbo.insumos i ON i.nombre = v.insumo
+JOIN dbo.recetas r ON r.nombre = N'Sopa de Fideos con Pollo'
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.receta_ingredientes ri WHERE ri.id_receta = r.id_receta AND ri.id_insumo = i.id_insumo
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.recetas WHERE nombre = N'Tacu Tacu de Lentejas')
+    INSERT INTO dbo.recetas (nombre, descripcion, raciones_base, activa)
+    VALUES (N'Tacu Tacu de Lentejas', N'Clásico criollo que aprovecha arroz y menestra; alto en hierro.', 50, 1);
+
+INSERT INTO dbo.receta_ingredientes (id_receta, id_insumo, cantidad_base)
+SELECT r.id_receta, i.id_insumo, v.cantidad
+FROM (VALUES
+    (N'Lenteja Serrana', 4.00),
+    (N'Arroz Superior', 5.00),
+    (N'Aceite Vegetal', 1.00)
+) AS v(insumo, cantidad)
+JOIN dbo.insumos i ON i.nombre = v.insumo
+JOIN dbo.recetas r ON r.nombre = N'Tacu Tacu de Lentejas'
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.receta_ingredientes ri WHERE ri.id_receta = r.id_receta AND ri.id_insumo = i.id_insumo
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.recetas WHERE nombre = N'Ají de Atún con Papa y Arroz')
+    INSERT INTO dbo.recetas (nombre, descripcion, raciones_base, activa)
+    VALUES (N'Ají de Atún con Papa y Arroz', N'Versión económica del ají de gallina con conserva de atún.', 50, 1);
+
+INSERT INTO dbo.receta_ingredientes (id_receta, id_insumo, cantidad_base)
+SELECT r.id_receta, i.id_insumo, v.cantidad
+FROM (VALUES
+    (N'Conserva de Atún', 25.00),
+    (N'Papa Blanca', 5.00),
+    (N'Arroz Superior', 5.00),
+    (N'Leche Evaporada', 6.00),
+    (N'Aceite Vegetal', 0.60)
+) AS v(insumo, cantidad)
+JOIN dbo.insumos i ON i.nombre = v.insumo
+JOIN dbo.recetas r ON r.nombre = N'Ají de Atún con Papa y Arroz'
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.receta_ingredientes ri WHERE ri.id_receta = r.id_receta AND ri.id_insumo = i.id_insumo
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.recetas WHERE nombre = N'Arroz con Leche')
+    INSERT INTO dbo.recetas (nombre, descripcion, raciones_base, activa)
+    VALUES (N'Arroz con Leche', N'Postre tradicional para acompañar el almuerzo comunitario.', 50, 1);
+
+INSERT INTO dbo.receta_ingredientes (id_receta, id_insumo, cantidad_base)
+SELECT r.id_receta, i.id_insumo, v.cantidad
+FROM (VALUES
+    (N'Arroz Superior', 2.50),
+    (N'Leche Evaporada', 12.00)
+) AS v(insumo, cantidad)
+JOIN dbo.insumos i ON i.nombre = v.insumo
+JOIN dbo.recetas r ON r.nombre = N'Arroz con Leche'
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.receta_ingredientes ri WHERE ri.id_receta = r.id_receta AND ri.id_insumo = i.id_insumo
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.recetas WHERE nombre = N'Lentejas con Arroz y Papa')
+    INSERT INTO dbo.recetas (nombre, descripcion, raciones_base, activa)
+    VALUES (N'Lentejas con Arroz y Papa', N'Menestra sencilla con papa sancochada y arroz graneado.', 50, 1);
+
+INSERT INTO dbo.receta_ingredientes (id_receta, id_insumo, cantidad_base)
+SELECT r.id_receta, i.id_insumo, v.cantidad
+FROM (VALUES
+    (N'Lenteja Serrana', 4.50),
+    (N'Arroz Superior', 5.00),
+    (N'Papa Blanca', 4.00),
+    (N'Aceite Vegetal', 0.50)
+) AS v(insumo, cantidad)
+JOIN dbo.insumos i ON i.nombre = v.insumo
+JOIN dbo.recetas r ON r.nombre = N'Lentejas con Arroz y Papa'
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.receta_ingredientes ri WHERE ri.id_receta = r.id_receta AND ri.id_insumo = i.id_insumo
+);
+GO
+
+-- Verificación
+SELECT departamento, COUNT(*) AS distritos FROM dbo.ubigeos GROUP BY departamento ORDER BY departamento;
+SELECT COUNT(*) AS recetas_activas FROM dbo.recetas WHERE activa = 1;
+GO
+
+
+-- Verificación
+SELECT nombre, categoria, unidad_base, stock_minimo FROM dbo.insumos ORDER BY categoria, nombre;
+GO
+
+
 -- Verificación final
 SELECT
     (SELECT COUNT(*) FROM dbo.ubigeos) AS ubigeos,

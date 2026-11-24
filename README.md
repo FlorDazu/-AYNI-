@@ -54,7 +54,9 @@ El nombre hace referencia al *ayni* andino: la reciprocidad como motor de la com
 │       └── styles.css            ← sistema de diseño global (paleta AYNI)
 │
 ├── database/
-│   └── AyniOllasDB.SQL           ← script completo de SQL Server: BD, 11 tablas, 6 SPs y datos semilla
+│   ├── AyniOllasDB.SQL           ← script completo de SQL Server: BD, 11 tablas, 6 SPs y datos semilla
+│   ├── 002_regiones_y_recetas.sql ← incremental: 162 distritos del Perú y 6 recetas más
+│   └── 003_insumos_adicionales.sql ← incremental: 12 insumos más (kg, L o unidades)
 │
 ├── README.md                     ← este documento
 ├── AGENTS.md                     ← guía para agentes de código
@@ -97,9 +99,10 @@ El nombre hace referencia al *ayni* andino: la reciprocidad como motor de la com
 ### Dirigenta (`DIRIGENTA`)
 - **Registro en un paso**: cuenta + olla común con código único (`HU-06`) e inicio de sesión con bloqueo temporal (`HU-07`).
 - **Gestión de su olla**: perfil, estado diario (atiende hoy, recibe frescos, necesidades urgentes) visible al instante en el portal (`HU-08`).
+- **Unidades de medida**: cada insumo se guarda en su unidad base (**kg**, **L** o **unidades**); los formularios permiten registrar en gramos, sacos, ml, botellas, galoneras, docenas o cajas y convierten automáticamente.
 - **Inventario por lotes/vencimientos** con semáforo (vigente / por vencer / vencido), entradas, salidas **PEPS (FIFO)** y descartes (`HU-11`).
 - **Donantes y donaciones** monetarias y en especie, con trazabilidad (`HU-09`, `HU-10`).
-- **Recetas con cálculo proporcional** según raciones, despacho atómico (todo o nada por PEPS) y sugerencias de recetario externo (API Ninjas) **traducidas al español** (`HU-12`).
+- **Receta del día** (una por día, con botón «Otra receta») con **cálculo proporcional** según raciones, despacho atómico (todo o nada por PEPS) y sugerencias de recetario externo (API Ninjas) **traducidas al español** (`HU-12`).
 - **Reportes**: kardex de movimientos, reporte consolidado y **exportación CSV** (`HU-14`).
 
 ### Administrador (`ADMIN`)
@@ -137,7 +140,10 @@ Hay **un único script** de base de datos: `database/AyniOllasDB.SQL`.
 2. Abra el archivo `database/AyniOllasDB.SQL`.
 3. Ejecútelo completo (tecla `F5` o *Execute*).
 
-> ⚠️ **Advertencia:** el script comienza con `DROP DATABASE AyniOllasDB`: re-ejecutarlo **borra todos los datos** existentes. Crea la BD, las 11 tablas normalizadas, los 6 procedimientos almacenados y los datos semilla (usuarios con `password_hash = 'PENDING_HASH'`, que la API reemplaza por hashes bcrypt al arrancar).
+4. Ejecute también `database/002_regiones_y_recetas.sql`: agrega **162 distritos de las 25 regiones** (foco en **Junín/Huancayo** con sus 28 distritos y en los 43 distritos de **Lima**) y **6 recetas** más. Es incremental: no borra nada y puede ejecutarse varias veces.
+5. Ejecute `database/003_insumos_adicionales.sql`: agrega 12 insumos (azúcar, sal, ajo, harina, avena, quinua, frejol, cebolla, zanahoria, pescado, huevos y leche fresca).
+
+> ⚠️ **Advertencia:** el script `AyniOllasDB.SQL` comienza con `DROP DATABASE AyniOllasDB`: re-ejecutarlo **borra todos los datos** existentes. Crea la BD, las 11 tablas normalizadas, los 6 procedimientos almacenados y los datos semilla (usuarios con `password_hash = 'PENDING_HASH'`, que la API reemplaza por hashes bcrypt al arrancar).
 
 ### Paso 2 · Backend (`http://127.0.0.1:8000`)
 
@@ -175,6 +181,7 @@ Todas las variables se leen en un solo archivo: `backend/app/core/config.py` (`p
 | `JWT_ALGORITHM` | `HS256` | Algoritmo de firma JWT. |
 | `JWT_EXPIRE_MINUTES` | `480` | Vigencia de la sesión (8 horas). |
 | `API_NINJAS_KEY` | *(clave de api.ninjas.com)* | Clave para el recetario externo (`/api/recetas/externas`, traducido al español). |
+| `GOOGLE_TRANSLATE_API_KEY` | *(opcional)* | Google Cloud Translation API. Sin clave se usa la cadena gratuita Google → MyMemory. |
 
 - Documentación interactiva: <http://127.0.0.1:8000/docs>
 - Estado/salud: <http://127.0.0.1:8000/api/health> · Base de datos: <http://127.0.0.1:8000/health/db> (`{"status": "ok"}` o `503`)
