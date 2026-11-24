@@ -2,7 +2,7 @@
 
 ## Repo layout
 
-- Top-level dirs: `backend/` (FastAPI + PostgreSQL/Supabase API via `psycopg` + `psycopg_pool`), `sql/001_ayni_postgres.sql` (PostgreSQL reference schema: 11 tables, seed data, 6 PL/pgSQL functions), `frontend/` (**Angular 22** standalone components + signals + CSS global; `ng serve` runs on port **4200** because backend CORS only allows `http://localhost:4200` — no proxy needed) and `.github/workflows/ci.yml` (pytest + ng build). Tests live in `backend/tests/`; no lint config.
+- Top-level dirs: `backend/` (FastAPI + PostgreSQL/Supabase API via `psycopg` + `psycopg_pool`; `Dockerfile` for Render), `sql/001_ayni_postgres.sql` (PostgreSQL reference schema: 11 tables, seed data, 6 PL/pgSQL functions), `frontend/` (**Angular 22** standalone components + signals + CSS global; `ng serve` runs on port **4200** because backend CORS only allows `http://localhost:4200` — no proxy needed) and `.github/workflows/ci.yml` (pytest + ng build). Tests live in `backend/tests/`; no lint config.
 - Backend layout under `backend/app/`: `apis/` (the 8 routers, formerly `routers/`), `core/` (`config.py`, `database.py`, `security.py`), `schemas/` (`__init__.py` re-exports `from .schemas import *`, so `app.schemas` imports are unchanged), plus empty `services/` and `repositories/` packages prepared for future extraction.
 - The frontend mirrors the 8 routers with typed services in `src/app/core/services/*` and DTOs in `src/app/core/models.ts` (field names must match `backend/app/schemas/schemas.py` and `backend/app/apis/*`). Its typecheck/build is `npm run build` (`ng build`). Login (`AuthService.login`) first sends **form-urlencoded** `username`/`password` as specified, then auto-retries as **JSON** on 422 because the current backend validates `LoginRequest` as a JSON body (form data → 422). Layout: `core/` (auth/interceptor/guards/toasts) + `features/` (publico, auth, panel, admin).
 - User-facing text (error messages, `mensaje` strings, comments, docs) is **Spanish**. Keep new strings in Spanish.
@@ -15,6 +15,19 @@ uv sync                                                   # install deps (uv; Py
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8000  # start API — README says run WITHOUT --reload
 uv run pytest                                             # run backend/tests (DB-independent: fakes the connection)
 ```
+
+## Docker / deploy (run from `backend/`)
+
+```powershell
+docker build -t ayni-backend .                                                # 2-stage image: python:3.12-slim + uv 0.13.1, `uv sync --frozen --no-dev`
+docker run --rm -p 8001:8001 -e PORT=8001 --env-file .env ayni-backend        # then check /api/health and /health/db
+```
+
+- `backend/Dockerfile` runs `uvicorn app.main:app --host 0.0.0.0 --port ${PORT}` (no `--reload`, `--proxy-headers`) as non-root user `ayni`. The port **must** come from `$PORT` (Render injects it, default 10000) and the host must be `0.0.0.0`.
+- `backend/.dockerignore` keeps `.env`, `.venv`, `tests/` and caches out of the image: secrets are passed as environment variables, never baked in. Keep `README.md` in the build context (`pyproject.toml` references it).
+- If you add a dependency, update `uv.lock` (`uv add ...`): the image installs with `--frozen` and fails on a stale lock.
+- Render (configured **manually**, no `render.yaml`): Web Service `ayni-backend`, branch `main`, runtime Docker, Root Directory `backend`, Health Check Path **`/api/health`** (not `/health/db`, so a Supabase outage does not restart the container in a loop). Env vars: `DATABASE_URL` (Session pooler :5432 — the direct `db.<ref>.supabase.co` host is IPv6-only and fails from Render), `JWT_SECRET` (new random value), `JWT_ALGORITHM`, `JWT_EXPIRE_MINUTES`, `API_NINJAS_KEY`, `CORS_ORIGINS` (frontend origin without trailing `/` once deployed). Full steps in `backend/README.md`.
+- The frontend is **not deployed yet**; its production `apiUrl` will be `https://ayni-backend.onrender.com/api` (note the `/api` suffix).
 
 ## Commands (run from `frontend/`)
 

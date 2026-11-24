@@ -1,0 +1,1971 @@
+[
+  {
+    "id": "TC001",
+    "title": "Iniciar sesión y entrar al panel de mi olla",
+    "description": "Una dirigenta puede autenticarse y aterrizar en su panel operativo correspondiente.",
+    "category": "Inicio de sesión y control de acceso por roles",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the role-based panel is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the panel for their role"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Registrar una entrada de inventario con éxito",
+    "description": "La dirigenta registra una nueva entrada de insumo con sus datos completos y verifica que quede guardada.",
+    "category": "Inventario PEPS (entradas, lotes, salidas y descartes)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open inventory management"
+      },
+      {
+        "type": "action",
+        "description": "Open the entry form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the insumo field with Arroz"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the quantity field with a valid amount"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid unit"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid expiration date into the expiration date field"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the donation source field with Donación de prueba"
+      },
+      {
+        "type": "action",
+        "description": "Submit the entry form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new inventory entry appears in the inventory view"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Despachar una receta consumiendo stock de forma atómica",
+    "description": "Verifica que una dirigenta pueda despachar una receta y que el stock se consuma de acuerdo con PEPS en una sola operación visible.",
+    "category": "Despacho de recetas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /panel/recetas"
+      },
+      {
+        "type": "action",
+        "description": "Dispatch a recipe using available stock"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the recipe dispatch is completed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the inventory stock is reduced accordingly"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Registrar una olla sin sesión",
+    "description": "Un visitante puede completar el registro público de una olla y ver la confirmación en español.",
+    "category": "Portal público con KPIs y directorio de ollas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registrar-olla"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the district field with a valid district"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the address field with a valid address"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the contact details field with valid contact information"
+      },
+      {
+        "type": "action",
+        "description": "Submit the public registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation in Spanish is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the public registration outcome is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Iniciar sesión y aterrizar en Mi Olla",
+    "description": "Verifica que una dirigenta pueda iniciar sesión y ser redirigida a su panel operativo de olla.",
+    "category": "Inicio de sesión",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the Mi Olla dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the daily state area is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Despachar una receta consumiendo stock PEPS",
+    "description": "Una dirigenta puede despachar una receta y ver que el stock se consume de forma atómica por lote.",
+    "category": "Gestión de inventario y donaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the recipes panel"
+      },
+      {
+        "type": "action",
+        "description": "Choose a recipe to dispatch"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the recipe dispatch"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the recipe dispatch is completed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify stock movements by lot are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Ver el resumen y los indicadores de la olla",
+    "description": "La dirigenta consulta el panel de su olla y verifica que el resumen, los indicadores y el estado diario se muestran correctamente.",
+    "category": "Panel Mi Olla (estado diario y KPIs)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to view the olla panel"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the olla summary is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify daily status information and operational indicators are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Despachar una receta con stock suficiente",
+    "description": "La dirigenta selecciona una receta y porciones válidas y confirma un despacho exitoso que consume stock de forma atómica.",
+    "category": "Despacho de recetas con stock atómico",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the recipe dispatch panel"
+      },
+      {
+        "type": "action",
+        "description": "Select a recipe with sufficient stock"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid number of portions"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the dispatch"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the number of meals served is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Consultar KPIs del portal público",
+    "description": "Verifica que un visitante pueda abrir la portada pública y ver los indicadores principales del sistema.",
+    "category": "Portal público",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the public KPI content is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify links to public exploration areas are available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Registrar una entrada de inventario válida",
+    "description": "Verifica que una dirigenta pueda agregar una entrada de inventario y verla reflejada en el inventario PEPS.",
+    "category": "Inventario PEPS",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /panel/inventario"
+      },
+      {
+        "type": "action",
+        "description": "Create a valid inventory entry"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the inventory entry is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the stock total is updated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Ver KPI del portal público",
+    "description": "Un visitante puede consultar el inicio público y ver los indicadores principales del sistema.",
+    "category": "Portal público con KPIs y directorio de ollas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the public KPI summary is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the public landing content is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Actualizar el estado diario de la olla",
+    "description": "La dirigenta modifica el estado diario desde el panel y verifica que el cambio quede reflejado.",
+    "category": "Panel Mi Olla (estado diario y KPIs)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to view the olla panel"
+      },
+      {
+        "type": "action",
+        "description": "Edit the daily status information"
+      },
+      {
+        "type": "action",
+        "description": "Save the daily status changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated daily state is reflected in the panel"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Mostrar un estado diario activo en Mi Olla",
+    "description": "La dirigenta entra a su panel principal y ve el estado diario actual de su olla junto con la información operativa básica.",
+    "category": "Panel Mi Olla con estado diario",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open my olla panel"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the daily status is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the main dashboard KPIs are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Explorar el directorio público de ollas",
+    "description": "Verifica que un visitante pueda revisar el directorio público y usar la búsqueda o filtros para encontrar ollas comunes.",
+    "category": "Portal público",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /ollas"
+      },
+      {
+        "type": "action",
+        "description": "Apply a search or filter in the directory"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of ollas is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the directory updates to match the applied criteria"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Abrir la ficha pública de una olla",
+    "description": "Un visitante puede entrar a la ficha pública de una olla y revisar su información visible.",
+    "category": "Portal público con KPIs y directorio de ollas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /ollas"
+      },
+      {
+        "type": "action",
+        "description": "Open a public olla from the directory"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the public olla detail view is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the olla's public information is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Registrar una salida consumiendo stock disponible",
+    "description": "La dirigenta registra una salida de inventario y verifica que el stock se actualiza correctamente.",
+    "category": "Inventario PEPS (entradas, lotes, salidas y descartes)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open inventory management"
+      },
+      {
+        "type": "action",
+        "description": "Open the output form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the insumo field with Arroz"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the quantity field with a valid amount within available stock"
+      },
+      {
+        "type": "action",
+        "description": "Submit the output form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the stock update is reflected in the inventory view"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Revisar los KPIs del portal público",
+    "description": "Una visitante abre la página principal del portal y ve los indicadores públicos del sistema.",
+    "category": "KPI home",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify public KPI information is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the landing page content is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Desplegar recetas disponibles para despachar",
+    "description": "La dirigenta abre el panel de recetas y ve las recetas disponibles con su información base para planificar un despacho.",
+    "category": "Despacho de recetas con stock atómico",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the recipe dispatch panel"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify available recipes are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify recipe ingredients are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Bloquear un despacho por stock insuficiente",
+    "description": "La dirigenta intenta despachar una receta que excede el stock disponible y ve una validación de insuficiencia en español.",
+    "category": "Despacho de recetas con stock atómico",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the recipe dispatch panel"
+      },
+      {
+        "type": "action",
+        "description": "Select a recipe with insufficient stock for the chosen portions"
+      },
+      {
+        "type": "action",
+        "description": "Select a number of portions that exceeds available stock"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the dispatch"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an insufficient-stock error message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no success confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "Ver el estado diario en Mi Olla",
+    "description": "Una dirigenta autenticada puede revisar el estado diario y las acciones principales de su panel.",
+    "category": "Inicio de sesión y control de acceso por roles",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the Mi Olla panel"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the daily status is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard KPIs or quick actions are visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Bloquear una salida con stock insuficiente",
+    "description": "La dirigenta intenta registrar una salida mayor al stock disponible y verifica que el formulario lo impide.",
+    "category": "Inventario PEPS (entradas, lotes, salidas y descartes)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open inventory management"
+      },
+      {
+        "type": "action",
+        "description": "Open the output form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the insumo field with Arroz"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the quantity field with a quantity greater than available stock"
+      },
+      {
+        "type": "action",
+        "description": "Submit the output form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an insufficient-stock validation message is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC022",
+    "title": "Registrar entradas y donaciones en inventario",
+    "description": "Una dirigenta puede registrar movimientos de entrada y asociar donaciones para alimentar el inventario.",
+    "category": "Gestión de inventario y donaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the inventory panel"
+      },
+      {
+        "type": "action",
+        "description": "Register a new inventory entry with valid data"
+      },
+      {
+        "type": "action",
+        "description": "Open the donations panel"
+      },
+      {
+        "type": "action",
+        "description": "Register a donation associated with the olla"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the inventory movement is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the donation record is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC023",
+    "title": "Ver el directorio público de ollas",
+    "description": "Una visitante abre el directorio público y ve el listado de ollas disponibles para consulta.",
+    "category": "Directorio de ollas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /ollas"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify public olla listings are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search or filtering controls are available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC024",
+    "title": "Registrar una donación en especie",
+    "description": "La dirigenta registra una donación con insumo y vencimiento y verifica que quede asociada a la olla.",
+    "category": "Donantes y donaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open donations management"
+      },
+      {
+        "type": "action",
+        "description": "Open the donation registration form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the donor field with Donante de prueba"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the item field with Fideos"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the quantity field with a valid amount"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid unit"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid expiration date into the expiration date field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the donation form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a donation success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the donation appears in the received donations list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC025",
+    "title": "Registrarse como dirigenta junto con su olla",
+    "description": "Una nueva dirigenta puede crear su cuenta y la olla asociada desde el formulario de registro.",
+    "category": "Registro de cuenta de dirigenta",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registro"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the name field with a valid name"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with a valid email"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with a valid password"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the olla details fields with valid information"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a registration confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is prompted to continue to login"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC026",
+    "title": "Detectar alertas de stock bajo y lotes próximos a vencer",
+    "description": "La dirigenta revisa los avisos operativos del panel y confirma qué insumos requieren atención.",
+    "category": "Panel Mi Olla (estado diario y KPIs)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to view the olla panel"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify low-stock alerts are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify near-expiration lots are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC027",
+    "title": "Registrar una nueva olla desde el portal público",
+    "description": "Una visitante completa el formulario público y registra una olla nueva sin iniciar sesión.",
+    "category": "Registro público de olla",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registrar-olla"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required public registration fields with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a registration success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the public registration outcome is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC028",
+    "title": "Consultar kardex con filtros y exportar CSV",
+    "description": "Verifica que una dirigenta pueda filtrar movimientos en reportes y exportar el resultado como CSV.",
+    "category": "Reportes y kardex",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /panel/reportes"
+      },
+      {
+        "type": "action",
+        "description": "Apply report filters"
+      },
+      {
+        "type": "action",
+        "description": "Export the filtered report as CSV"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the filtered kardex or report results are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the CSV export action is available or completed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC029",
+    "title": "Administrar ollas y usuarios desde el panel de administrador",
+    "description": "El administrador gestiona el estado de una olla y el rol o bloqueo de un usuario desde sus pantallas de administración.",
+    "category": "Administración",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to manage ollas"
+      },
+      {
+        "type": "action",
+        "description": "Toggle the active state of an olla"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to manage users"
+      },
+      {
+        "type": "action",
+        "description": "Change a user's role or block status"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the olla state change is reflected in the admin list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user role or block status change is reflected in the user list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC030",
+    "title": "Cambiar rol y bloquear un usuario",
+    "description": "Un administrador puede actualizar el rol de un usuario y bloquear o desbloquear su cuenta.",
+    "category": "Administración de ollas y usuarios",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the users admin panel"
+      },
+      {
+        "type": "action",
+        "description": "Select a user from the list"
+      },
+      {
+        "type": "action",
+        "description": "Change the user's role"
+      },
+      {
+        "type": "action",
+        "description": "Toggle the user's block status"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user's updated role is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user's block status is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC031",
+    "title": "Descartar un lote con motivo",
+    "description": "La dirigenta descarta un lote vencido o inutilizable indicando un motivo y confirma el registro del descarte.",
+    "category": "Inventario PEPS (entradas, lotes, salidas y descartes)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open inventory management"
+      },
+      {
+        "type": "action",
+        "description": "Choose a lot to discard"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the discard reason field with Lote vencido"
+      },
+      {
+        "type": "action",
+        "description": "Submit the discard action"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a discard success confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the discarded lot no longer appears as active inventory"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC032",
+    "title": "Activar o desactivar una olla",
+    "description": "Verifica que un administrador pueda cambiar el estado de una olla desde el listado y ver la confirmación correspondiente.",
+    "category": "Administración de ollas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/ollas"
+      },
+      {
+        "type": "action",
+        "description": "Change the state of an olla"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the olla list reflects the updated state"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the success message is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC033",
+    "title": "Consultar el kardex con filtros aplicados",
+    "description": "La dirigenta filtra los movimientos del kardex por criterios de búsqueda y ve los resultados correspondientes.",
+    "category": "Kardex y reportes con exportación CSV",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the reports panel"
+      },
+      {
+        "type": "action",
+        "description": "Select a movement type filter"
+      },
+      {
+        "type": "action",
+        "description": "Select an ingredient filter"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date range"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify filtered kardex movements are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the report summary remains visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC034",
+    "title": "Consultar el kardex y filtrar movimientos",
+    "description": "La dirigenta revisa el historial de movimientos de inventario y aplica filtros para acotar los resultados.",
+    "category": "Panel Reportes",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to view reports"
+      },
+      {
+        "type": "action",
+        "description": "Apply report filters"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the kardex movements are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the filtered report results are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC035",
+    "title": "Registrar una donación asociada a la olla",
+    "description": "Verifica que una dirigenta pueda registrar un donante y una donación vinculada a la olla.",
+    "category": "Gestión de donantes y donaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /panel/donaciones"
+      },
+      {
+        "type": "action",
+        "description": "Register a donor and associated donation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the donation is displayed in the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the success confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC036",
+    "title": "Ordenar y revisar lotes por vencimiento",
+    "description": "La dirigenta abre la lista de lotes y confirma que puede identificar los próximos a vencer y los vencidos.",
+    "category": "Inventario PEPS (entradas, lotes, salidas y descartes)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open inventory management"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the inventory lot list is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify lots are ordered by expiration date"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC037",
+    "title": "Exportar el reporte a CSV",
+    "description": "La dirigenta exporta el reporte filtrado y verifica que la exportación CSV quede disponible.",
+    "category": "Panel Reportes",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to view reports"
+      },
+      {
+        "type": "action",
+        "description": "Apply report filters"
+      },
+      {
+        "type": "action",
+        "description": "Export the report as CSV"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the CSV export action completes successfully"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exported report state is reflected in the UI"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC038",
+    "title": "Revisar el resumen consolidado de inventario",
+    "description": "La dirigenta abre el panel de reportes y verifica que el resumen consolidado de entradas, salidas y descartes esté disponible.",
+    "category": "Kardex y reportes con exportación CSV",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the reports panel"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the inventory summary is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify entries, exits, and discards are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC039",
+    "title": "Registrar y buscar un donante",
+    "description": "La dirigenta crea un donante nuevo y luego verifica que pueda encontrarse en el listado.",
+    "category": "Donantes y donaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open donations management"
+      },
+      {
+        "type": "action",
+        "description": "Open the donor registration form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the donor name field with Donante de prueba"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the contact details field with contacto de prueba"
+      },
+      {
+        "type": "action",
+        "description": "Submit the donor form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new donor appears in the donor list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the donor can be found in the donor search results"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC040",
+    "title": "Administrar una olla desde el panel de administración",
+    "description": "El administrador abre el listado de ollas y cambia el estado de una olla para mantener su gestión al día.",
+    "category": "Administración de ollas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the olla administration panel"
+      },
+      {
+        "type": "action",
+        "description": "Change the status of an olla"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the olla administration list is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the olla status update is reflected"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC041",
+    "title": "Gestionar el rol y bloqueo de un usuario",
+    "description": "El administrador abre la gestión de usuarios y cambia el rol o estado de bloqueo de una cuenta según sea necesario.",
+    "category": "Administración de usuarios",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the user administration panel"
+      },
+      {
+        "type": "action",
+        "description": "Update a user's role or block status"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user administration list is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated user status is reflected"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC042",
+    "title": "Bloquear o desbloquear una cuenta de usuario",
+    "description": "Verifica que un administrador pueda desactivar o reactivar una cuenta y ver el estado actualizado.",
+    "category": "Administración de usuarios",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/usuarios"
+      },
+      {
+        "type": "action",
+        "description": "Toggle the blocked state of a user account"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the account state is updated in the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the success confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC043",
+    "title": "Exportar el kardex en CSV",
+    "description": "La dirigenta descarga el reporte de movimientos en CSV desde el panel de reportes y confirma que la exportación queda disponible.",
+    "category": "Kardex y reportes con exportación CSV",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the reports panel"
+      },
+      {
+        "type": "action",
+        "description": "Click the export CSV action"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a CSV export confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the report remains accessible after export"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC044",
+    "title": "Revisar auditoría de movimientos por olla",
+    "description": "El administrador abre la auditoría de una olla y confirma que los movimientos se muestran con trazabilidad.",
+    "category": "Auditoría por olla",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open audit review"
+      },
+      {
+        "type": "action",
+        "description": "Select an olla to review"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify audit movements are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify movement details include user and lot traceability"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC045",
+    "title": "Buscar recetas externas y revisar resultados traducidos",
+    "description": "La dirigenta busca una receta externa desde el panel y ve resultados con información útil para planificar en español cuando están disponibles.",
+    "category": "Recetas externas traducidas al español",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the recipe dispatch panel"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the recipe search field with a common dish name"
+      },
+      {
+        "type": "action",
+        "description": "Trigger the search"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify external recipe results are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify recipe ingredients and steps are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC046",
+    "title": "Registrar cuenta de dirigenta junto con su olla",
+    "description": "Verifica que una dirigenta pueda crear su cuenta y asociarla a una olla desde el flujo de registro.",
+    "category": "Registro de cuenta de dirigenta junto con su olla",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registro"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required registration fields with valid information"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a successful account creation confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the associated olla registration is reflected"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC047",
+    "title": "Buscar recetas externas y ver el resultado traducido o en inglés con aviso",
+    "description": "La dirigenta busca recetas externas desde el panel y verifica que se muestre un resultado utilizable junto con el aviso correspondiente si no hay traducción.",
+    "category": "Panel Recetas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open recipe search"
+      },
+      {
+        "type": "action",
+        "description": "Search for an external recipe"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify external recipe results are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the translation status or notice is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC048",
+    "title": "Repetir una búsqueda externa y ver resultados reutilizados",
+    "description": "La dirigenta repite la misma búsqueda de receta externa y obtiene nuevamente resultados visibles sin perder el contenido mostrado.",
+    "category": "Recetas externas traducidas al español",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the recipe dispatch panel"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the recipe search field with a common dish name"
+      },
+      {
+        "type": "action",
+        "description": "Trigger the search"
+      },
+      {
+        "type": "action",
+        "description": "Trigger the search again with the same query"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the repeated search still shows recipe results"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the displayed recipe content remains available"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC049",
+    "title": "Ver mensajes de validación en formularios públicos",
+    "description": "Un visitante ve validaciones en español cuando intenta enviar formularios públicos incompletos.",
+    "category": "Portal público con KPIs y directorio de ollas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registrar-olla"
+      },
+      {
+        "type": "action",
+        "description": "Submit the public registration form without completing required fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation messages in Spanish are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the form is not submitted"
+      }
+    ],
+    "priority": "Low"
+  }
+]

@@ -53,3 +53,60 @@ Al arrancar, la API reemplaza los `password_hash = 'PENDING_HASH'` por hashes bc
 
 Las rutas con datos de una olla usan la olla de la dirigenta autenticada. Un `ADMIN` puede consultarlas
 indicando `?id_olla=N`.
+
+## Despliegue en Render con Docker (manual)
+
+La imagen se define en `Dockerfile` (Python 3.12 slim + `uv sync --frozen --no-dev`, usuario sin privilegios,
+`uvicorn` en `0.0.0.0:$PORT`). `.dockerignore` excluye `.env`, `.venv`, `tests/` y cachés: **los secretos nunca
+entran en la imagen**.
+
+### 1 · Probar la imagen en local (Docker Desktop encendido, desde `backend/`)
+
+```powershell
+docker build -t ayni-backend .
+```
+
+```powershell
+docker run --rm -p 8001:8001 -e PORT=8001 --env-file .env ayni-backend
+```
+
+Verifique `http://127.0.0.1:8001/api/health` y `http://127.0.0.1:8001/health/db` (debe responder `{"status": "ok"}`).
+
+### 2 · Subir a GitHub
+
+Commit en la rama `backend`, `git push origin backend`, Pull Request `backend → main` y merge con el CI en verde.
+Render despliega desde `main`.
+
+### 3 · Crear el Web Service en Render (New → Web Service → repositorio `-AYNI-`)
+
+| Campo | Valor |
+|---|---|
+| Name | `ayni-backend` → `https://ayni-backend.onrender.com` (si el nombre está ocupado, use la URL que asigne Render) |
+| Branch | `main` |
+| Language | Docker |
+| Root Directory | `backend` |
+| Dockerfile Path | `./Dockerfile` |
+| Health Check Path | `/api/health` (no use `/health/db`: una caída de Supabase reiniciaría el contenedor en bucle) |
+| Instance Type | Free (se suspende tras ~15 min sin tráfico; la primera petición tarda ~50 s) |
+
+Variables de entorno (*Environment*), sin comillas:
+
+| Variable | Valor |
+|---|---|
+| `DATABASE_URL` | Session pooler de Supabase, puerto **5432**, contraseña URL-encodeada, `?sslmode=require` (la conexión directa `db.<ref>.supabase.co` es solo IPv6 y no funciona desde Render) |
+| `JWT_SECRET` | Cadena aleatoria nueva: `uv run python -c "import secrets; print(secrets.token_urlsafe(48))"` |
+| `JWT_ALGORITHM` | `HS256` |
+| `JWT_EXPIRE_MINUTES` | `480` |
+| `API_NINJAS_KEY` | Clave de api-ninjas.com |
+| `CORS_ORIGINS` | Vacío por ahora (`http://localhost:4200` siempre está permitido). Al desplegar el frontend: su origen sin `/` final |
+
+`PORT` no se define: Render lo inyecta.
+
+### 4 · Verificar
+
+- `https://ayni-backend.onrender.com/api/health`
+- `https://ayni-backend.onrender.com/health/db` → `{"status": "ok"}`
+- `https://ayni-backend.onrender.com/docs` → login con una cuenta semilla y prueba de un endpoint protegido.
+
+Cuando se despliegue el frontend, su `apiUrl` de producción será `https://ayni-backend.onrender.com/api`
+(con `/api` al final) y su origen debe añadirse a `CORS_ORIGINS` en Render.

@@ -39,6 +39,8 @@ El nombre hace referencia al *ayni* andino: la reciprocidad como motor de la com
 │   ├── tests/                    ← pruebas pytest (conftest.py + test_api.py)
 │   ├── requirements.txt          ← dependencias exportadas con uv
 │   ├── pyproject.toml / uv.lock
+│   ├── Dockerfile                ← imagen de producción (Render): Python 3.12 slim + uv
+│   ├── .dockerignore             ← deja fuera .env, .venv, tests y cachés
 │   └── .env.example              ← plantilla de variables de entorno
 │
 ├── frontend/                     ← SPA Angular (puerto 4200)
@@ -221,8 +223,39 @@ La contraseña inicial de estas cuentas se define **localmente** al arrancar la 
 
 ---
 
+## 8 · Despliegue del Backend (Render + Docker)
+
+El backend se publica en **Render** como *Web Service* con runtime **Docker**, construido desde `backend/Dockerfile`:
+
+- Imagen en dos etapas (`python:3.12-slim` + `uv sync --frozen --no-dev`), usuario sin privilegios y `uvicorn` en `0.0.0.0:$PORT` (Render inyecta `PORT`).
+- `backend/.dockerignore` excluye `.env`: los secretos se cargan como variables de entorno en Render, nunca dentro de la imagen.
+- La base de datos sigue en **Supabase** (Session pooler, puerto 5432, `sslmode=require`).
+
+Probar la imagen en local (desde `backend/`, con Docker Desktop encendido):
+
+```powershell
+docker build -t ayni-backend .
+```
+
+```powershell
+docker run --rm -p 8001:8001 -e PORT=8001 --env-file .env ayni-backend
+```
+
+Luego verifique <http://127.0.0.1:8001/api/health> y <http://127.0.0.1:8001/health/db>.
+
+| Configuración en Render | Valor |
+|---|---|
+| Servicio | `ayni-backend` → `https://ayni-backend.onrender.com` |
+| Rama / Root Directory | `main` / `backend` |
+| Health Check Path | `/api/health` |
+| Variables | `DATABASE_URL`, `JWT_SECRET`, `JWT_ALGORITHM`, `JWT_EXPIRE_MINUTES`, `API_NINJAS_KEY`, `CORS_ORIGINS` |
+
+El paso a paso completo está en `backend/README.md`. El frontend aún no está desplegado: cuando lo esté, su `apiUrl` de producción será `https://ayni-backend.onrender.com/api` y su origen se añadirá a `CORS_ORIGINS`.
+
+---
+
 ## Documentación relacionada
 
 - `PRD.md` — documento de requisitos de producto: roles, requerimientos por módulo, inventario de endpoints, modelo de datos, reglas de negocio y criterios de aceptación E2E.
-- `backend/README.md` — endpoints por historia de usuario (HU-01…HU-14) y puesta en marcha del API.
+- `backend/README.md` — endpoints por historia de usuario (HU-01…HU-14), puesta en marcha del API y despliegue en Render con Docker.
 - `AGENTS.md` — convenciones del repositorio, comandos de desarrollo y flujo de base de datos.
