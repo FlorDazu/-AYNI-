@@ -96,14 +96,13 @@ GO
 CREATE TABLE dbo.donaciones (
     id_donacion INT IDENTITY(1,1) PRIMARY KEY,
     id_olla INT NOT NULL,
-    id_donante INT NULL,
+    id_donante INT NULL, -- Referencia lógica a donantes (sin FK para evitar bucles; la API valida que sea de la misma olla)
     tipo_donacion NVARCHAR(20) NOT NULL CHECK (tipo_donacion IN ('ESPECIE', 'MONETARIA')),
     monto_soles DECIMAL(10,2) NULL CHECK (monto_soles IS NULL OR monto_soles >= 0),
     comprobante NVARCHAR(80) NULL,
     descripcion NVARCHAR(300) NOT NULL,
     fecha_donacion DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    CONSTRAINT FK_donaciones_olla FOREIGN KEY (id_olla) REFERENCES dbo.ollas(id_olla),
-    CONSTRAINT FK_donaciones_donante FOREIGN KEY (id_donante) REFERENCES dbo.donantes(id_donante)
+    CONSTRAINT FK_donaciones_olla FOREIGN KEY (id_olla) REFERENCES dbo.ollas(id_olla)
 );
 GO
 
@@ -113,15 +112,14 @@ CREATE TABLE dbo.lotes_inventario (
     codigo_lote NVARCHAR(30) NOT NULL UNIQUE,
     id_olla INT NOT NULL,
     id_insumo INT NOT NULL,
-    id_donacion INT NULL,
+    id_donacion INT NULL, -- Referencia lógica a donaciones (sin FK para evitar bucles; la valida sp_RegistrarEntradaInventario)
     cantidad_inicial DECIMAL(10,2) NOT NULL CHECK (cantidad_inicial > 0),
     cantidad_disponible DECIMAL(10,2) NOT NULL CHECK (cantidad_disponible >= 0),
     fecha_ingreso DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
     fecha_vencimiento DATE NULL,
     estado NVARCHAR(20) NOT NULL DEFAULT 'ACTIVO' CHECK (estado IN ('ACTIVO', 'AGOTADO', 'DESCARTADO')),
     CONSTRAINT FK_lotes_olla FOREIGN KEY (id_olla) REFERENCES dbo.ollas(id_olla),
-    CONSTRAINT FK_lotes_insumo FOREIGN KEY (id_insumo) REFERENCES dbo.insumos(id_insumo),
-    CONSTRAINT FK_lotes_donacion FOREIGN KEY (id_donacion) REFERENCES dbo.donaciones(id_donacion)
+    CONSTRAINT FK_lotes_insumo FOREIGN KEY (id_insumo) REFERENCES dbo.insumos(id_insumo)
 );
 GO
 
@@ -129,20 +127,15 @@ GO
 CREATE TABLE dbo.movimientos_inventario (
     id_movimiento INT IDENTITY(1,1) PRIMARY KEY,
     codigo_correlativo NVARCHAR(30) NOT NULL UNIQUE,
-    id_olla INT NOT NULL,
-    id_insumo INT NOT NULL,
-    id_lote INT NULL,
-    id_usuario INT NOT NULL,
+    id_lote INT NOT NULL,    -- La olla y el insumo se obtienen del lote (3FN, sin datos repetidos)
+    id_usuario INT NOT NULL, -- Referencia lógica a usuarios (sin FK para evitar bucles; la validan los procedimientos)
     tipo_movimiento NVARCHAR(20) NOT NULL CHECK (tipo_movimiento IN ('ENTRADA', 'SALIDA', 'DESCARTE')),
     cantidad DECIMAL(10,2) NOT NULL CHECK (cantidad > 0),
     saldo_anterior DECIMAL(10,2) NOT NULL,
     saldo_posterior DECIMAL(10,2) NOT NULL,
     motivo NVARCHAR(250) NOT NULL,
     fecha_movimiento DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    CONSTRAINT FK_mov_olla FOREIGN KEY (id_olla) REFERENCES dbo.ollas(id_olla),
-    CONSTRAINT FK_mov_insumo FOREIGN KEY (id_insumo) REFERENCES dbo.insumos(id_insumo),
-    CONSTRAINT FK_mov_lote FOREIGN KEY (id_lote) REFERENCES dbo.lotes_inventario(id_lote),
-    CONSTRAINT FK_mov_usuario FOREIGN KEY (id_usuario) REFERENCES dbo.usuarios(id_usuario)
+    CONSTRAINT FK_mov_lote FOREIGN KEY (id_lote) REFERENCES dbo.lotes_inventario(id_lote)
 );
 GO
 
@@ -172,20 +165,19 @@ GO
 CREATE TABLE dbo.despachos_receta (
     id_despacho INT IDENTITY(1,1) PRIMARY KEY,
     id_olla INT NOT NULL,
-    id_receta INT NOT NULL,
-    id_usuario INT NOT NULL,
+    id_receta INT NOT NULL,  -- Referencia lógica a recetas (sin FK para evitar bucles; la valida sp_DespacharRecetaAtomica)
+    id_usuario INT NOT NULL, -- Referencia lógica a usuarios (sin FK para evitar bucles; la valida sp_DespacharRecetaAtomica)
     raciones_servidas INT NOT NULL CHECK (raciones_servidas > 0),
     fecha_despacho DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    CONSTRAINT FK_desp_olla FOREIGN KEY (id_olla) REFERENCES dbo.ollas(id_olla),
-    CONSTRAINT FK_desp_receta FOREIGN KEY (id_receta) REFERENCES dbo.recetas(id_receta),
-    CONSTRAINT FK_desp_usuario FOREIGN KEY (id_usuario) REFERENCES dbo.usuarios(id_usuario)
+    CONSTRAINT FK_desp_olla FOREIGN KEY (id_olla) REFERENCES dbo.ollas(id_olla)
 );
 GO
 
 -- Índices de rendimiento
 CREATE INDEX IX_ollas_ubigeo_activa ON dbo.ollas(id_ubigeo, activada);
 CREATE INDEX IX_lotes_peps ON dbo.lotes_inventario(id_olla, id_insumo, estado, fecha_vencimiento, fecha_ingreso);
-CREATE INDEX IX_movimientos_olla_fecha ON dbo.movimientos_inventario(id_olla, fecha_movimiento DESC);
+CREATE INDEX IX_movimientos_lote_fecha ON dbo.movimientos_inventario(id_lote, fecha_movimiento DESC);
+CREATE INDEX IX_lotes_donacion ON dbo.lotes_inventario(id_donacion);
 GO
 
 -- ============================================================================
@@ -347,6 +339,13 @@ BEGIN
         IF @cantidad <= 0
             THROW 50003, 'La cantidad de entrada debe ser mayor a cero.', 1;
 
+        IF NOT EXISTS (SELECT 1 FROM dbo.usuarios WHERE id_usuario = @id_usuario AND activo = 1)
+            THROW 50012, 'El usuario que registra la operación no existe o está inactivo.', 1;
+
+        IF @id_donacion IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dbo.donaciones WHERE id_donacion = @id_donacion AND id_olla = @id_olla)
+            THROW 50011, 'La donación indicada no existe o no pertenece a su olla.', 1;
+
         IF @in_nested_tx = 0 BEGIN TRANSACTION;
 
         DECLARE @saldo_anterior DECIMAL(10,2);
@@ -380,12 +379,12 @@ BEGIN
         SET @saldo_posterior = @saldo_anterior + @cantidad;
 
         INSERT INTO dbo.movimientos_inventario (
-            codigo_correlativo, id_olla, id_insumo, id_lote, id_usuario,
+            codigo_correlativo, id_lote, id_usuario,
             tipo_movimiento, cantidad, saldo_anterior, saldo_posterior, motivo
         )
         VALUES (
             'TMP-E-' + LEFT(REPLACE(CAST(NEWID() AS NVARCHAR(36)), '-', ''), 8),
-            @id_olla, @id_insumo, @nuevo_id_lote, @id_usuario,
+            @nuevo_id_lote, @id_usuario,
             'ENTRADA', @cantidad, @saldo_anterior, @saldo_posterior,
             ISNULL(NULLIF(LTRIM(RTRIM(@motivo)), ''), N'Ingreso de inventario')
         );
@@ -429,6 +428,9 @@ BEGIN
     BEGIN TRY
         IF @cantidad <= 0
             THROW 50004, 'La cantidad de salida debe ser mayor a cero.', 1;
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.usuarios WHERE id_usuario = @id_usuario AND activo = 1)
+            THROW 50012, 'El usuario que registra la operación no existe o está inactivo.', 1;
 
         IF @in_nested_tx = 0 BEGIN TRANSACTION;
 
@@ -484,12 +486,12 @@ BEGIN
             WHERE id_lote = @lote_id;
 
             INSERT INTO dbo.movimientos_inventario (
-                codigo_correlativo, id_olla, id_insumo, id_lote, id_usuario,
+                codigo_correlativo, id_lote, id_usuario,
                 tipo_movimiento, cantidad, saldo_anterior, saldo_posterior, motivo
             )
             VALUES (
                 'TMP-S-' + LEFT(REPLACE(CAST(NEWID() AS NVARCHAR(36)), '-', ''), 8),
-                @id_olla, @id_insumo, @lote_id, @id_usuario,
+                @lote_id, @id_usuario,
                 'SALIDA', @consumir, @saldo_corriente, (@saldo_corriente - @consumir),
                 ISNULL(NULLIF(LTRIM(RTRIM(@motivo)), ''), N'Salida PEPS')
             );
@@ -543,6 +545,9 @@ BEGIN
         IF LEN(LTRIM(RTRIM(ISNULL(@motivo, '')))) = 0
             THROW 50006, 'Debe indicar un motivo obligatorio para descartar el lote.', 1;
 
+        IF NOT EXISTS (SELECT 1 FROM dbo.usuarios WHERE id_usuario = @id_usuario AND activo = 1)
+            THROW 50012, 'El usuario que registra la operación no existe o está inactivo.', 1;
+
         BEGIN TRANSACTION;
 
         DECLARE @id_insumo INT;
@@ -575,12 +580,12 @@ BEGIN
         SET @saldo_posterior = @saldo_anterior - @cantidad_descartada;
 
         INSERT INTO dbo.movimientos_inventario (
-            codigo_correlativo, id_olla, id_insumo, id_lote, id_usuario,
+            codigo_correlativo, id_lote, id_usuario,
             tipo_movimiento, cantidad, saldo_anterior, saldo_posterior, motivo
         )
         VALUES (
             'TMP-D-' + LEFT(REPLACE(CAST(NEWID() AS NVARCHAR(36)), '-', ''), 8),
-            @id_olla, @id_insumo, @id_lote, @id_usuario,
+            @id_lote, @id_usuario,
             'DESCARTE', @cantidad_descartada, @saldo_anterior, @saldo_posterior,
             LTRIM(RTRIM(@motivo))
         );
@@ -630,6 +635,9 @@ BEGIN
 
         IF @nombre_receta IS NULL
             THROW 50009, 'La receta seleccionada no existe o no está activa.', 1;
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.usuarios WHERE id_usuario = @id_usuario AND activo = 1)
+            THROW 50012, 'El usuario que registra la operación no existe o está inactivo.', 1;
 
         BEGIN TRANSACTION;
 
@@ -783,17 +791,17 @@ GO
 
 -- 4.8 Movimientos Correlativos Iniciales (Olla 1)
 INSERT INTO dbo.movimientos_inventario (
-    codigo_correlativo, id_olla, id_insumo, id_lote, id_usuario,
+    codigo_correlativo, id_lote, id_usuario,
     tipo_movimiento, cantidad, saldo_anterior, saldo_posterior, motivo
 ) VALUES
-('E-00001', 1, 1, 1, 2, 'ENTRADA', 30.00, 0.00, 30.00, N'Ingreso por donación Mercado Bayóvar'),
-('S-00001', 1, 1, 1, 2, 'SALIDA',   6.00, 30.00, 24.00, N'Almuerzo comunitario del día'),
-('E-00002', 1, 2, 2, 2, 'ENTRADA', 15.00, 0.00, 15.00, N'Ingreso por donación Mercado Bayóvar'),
-('S-00002', 1, 2, 2, 2, 'SALIDA',   3.00, 15.00, 12.00, N'Menestra para almuerzo'),
-('E-00003', 1, 3, 3, 2, 'ENTRADA',  8.00, 0.00,  8.00, N'Ingreso por donación Distribuidora Alimentos'),
-('S-00003', 1, 3, 3, 2, 'SALIDA',   4.00,  8.00,  4.00, N'Consumo semanal de cocina'),
-('E-00004', 1, 4, 4, 2, 'ENTRADA', 12.00, 0.00, 12.00, N'Ingreso de pollo fresco'),
-('S-00004', 1, 4, 4, 2, 'SALIDA',   2.00, 12.00, 10.00, N'Preparación de segundo');
+('E-00001', 1, 2, 'ENTRADA', 30.00, 0.00, 30.00, N'Ingreso por donación Mercado Bayóvar'),
+('S-00001', 1, 2, 'SALIDA',   6.00, 30.00, 24.00, N'Almuerzo comunitario del día'),
+('E-00002', 2, 2, 'ENTRADA', 15.00, 0.00, 15.00, N'Ingreso por donación Mercado Bayóvar'),
+('S-00002', 2, 2, 'SALIDA',   3.00, 15.00, 12.00, N'Menestra para almuerzo'),
+('E-00003', 3, 2, 'ENTRADA',  8.00, 0.00,  8.00, N'Ingreso por donación Distribuidora Alimentos'),
+('S-00003', 3, 2, 'SALIDA',   4.00,  8.00,  4.00, N'Consumo semanal de cocina'),
+('E-00004', 4, 2, 'ENTRADA', 12.00, 0.00, 12.00, N'Ingreso de pollo fresco'),
+('S-00004', 4, 2, 'SALIDA',   2.00, 12.00, 10.00, N'Preparación de segundo');
 GO
 
 -- 4.9 Recetas Comunitarias Base (50 raciones)
